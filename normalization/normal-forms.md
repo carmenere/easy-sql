@@ -37,13 +37,13 @@ Each **NF** remove particular type of FD.<br>
 
 ## 1NF
 A relation is in **1NF** iif:
-- every attribute in relation is **singled valued** attribute, i.e., relation **doesn't** contain any **composite** or **multi-valued** attribute;
+- every attribute in relation is **singled valued** attribute, i.e., relation **doesn't** contain any **composite** or **multivalued** attribute;
 - all tuples in relation are uniqie;
 
 <br>
 
 ## 2NF
-2NF removes **partial** dependency.<br>
+2NF removes **partial** dependencies.<br>
 
 A relation is in **2NF** iif:
 - relation that is in **1NF**;
@@ -52,11 +52,32 @@ A relation is in **2NF** iif:
 <br>
 
 ## 3NF
-**3NF** removes **transitive** dependency.<br>
+**3NF** removes **transitive** dependencies.<br>
 
 A relation is in **3NF** iif:
 - relation that is in **2NF**;
-- there is **no** *transitive dependency* in relation;
+- there is **no** *transitive dependency* in relation, i.e., **non-prime** attributes depend only on the **candidate** keys and **don't** have a **transitive** dependency on another key;
+
+<br>
+
+### Example
+
+Tournament winners
+|Tournament|Year|Winner|Winner's date of birth|
+|:---------|:---|:-----|:---------------------|
+|Indiana Invitational|1998|Al Fredrickson|21 July 1975|
+|Cleveland Open|1999|Bob Albertson|28 September 1968|
+|Des Moines Masters|1999|Al Fredrickson|21 July 1975|
+|Indiana Invitational|1999|Chip Masterson|14 March 1977|
+
+<br>
+
+The **composite key** `{Tournament, Year}` is a **minimal** set of attributes guaranteed to uniquely identify a row. That is, `{Tournament, Year}` is a **candidate** key for the table.<br>
+The **non-prime** attribute `Winner's date of birth` is **transitively** dependent on the **candidate** key `{Tournament, Year}` through the **non-prime** attribute `Winner`.<br>
+
+To become **3NF** table must be splitted into 2 tables:
+- `{Tournament, Year, Winner}`
+- `{Winner, Date of birth}`
 
 <br>
 
@@ -65,13 +86,53 @@ A relation is in **3NF** iif:
 
 A relation is in **BCNF** iif:
 - relation that is in **3NF**;
-- for any dependency `A → B`, `A` should be **super** or **candidate** key;
+- **determinant** of **any** dependency in relation is a **candidate** key, i.e., for **any** dependency `A → B`, `A` must be **candidate** key;
+
+<br>
+
+**BCNF** is a stronger form of normalization than **3NF** because it doesn't allow the **right** side of the functional dependency to be a **prime** attribute.
+
+<br>
+
+It is **NP-complete**, given a database schema in **3NF**, to determine whether it violates **BCNF**.
 
 <br>
 
 # 4NF
-**4NF** removes **multi-valued** dependency.<br>
+**4NF** removes **multivalued** dependencies.<br>
 
 A relation is in **4NF** iif:
 - relation that is in **BCNF**;
-- there is **no** *multi-valued dependency* in relation;
+- there is **no** *multivalued dependency* in relation;
+
+<br>
+
+## Example
+|Restaurant|Pizza Variety|Delivery Area|
+|:---------|:------------|:------------|
+|A1 Pizza|Thick Crust|Springfield|
+|A1 Pizza|Thick Crust|Shelbyville|
+|A1 Pizza|Thick Crust|Capital City|
+|A1 Pizza|Stuffed Crust|Springfield|
+|A1 Pizza|Stuffed Crust|Shelbyville|
+|A1 Pizza|Stuffed Crust|Capital City|
+|Elite Pizza|Thin Crust|Capital City|
+|Elite Pizza|Stuffed Crust|Capital City|
+|Vincenzo's Pizza|Thick Crust|Springfield|
+|Vincenzo's Pizza|Thick Crust|Shelbyville|
+|Vincenzo's Pizza|Thin Crust|Springfield|
+|Vincenzo's Pizza|Thin Crust|Shelbyville|
+
+<br>
+
+Each row indicates that a given restaurant can deliver a given variety of pizza to a given area.<br>
+The table has **no** non-key attributes because its only candidate key is `{Restaurant, Pizza Variety, Delivery Area}`. Therefore, it is in **BCNF**.<br>
+But this relation has **two** non-trivial **multivalued** dependencies on the `{Restaurant}` attribute (which is **not** a superkey):
+- `{Restaurant} → {Pizza Variety}`
+- `{Restaurant} → {Delivery Area}`
+
+<br>
+
+This leads to redundancy in the table. To eliminate redundancy we must separate relation `{Restaurant, Pizza Variety, Delivery Area}` into 2 relations:
+- `{Restaurant, Pizza Variety}`
+- `{Restaurant, Delivery Area}`
