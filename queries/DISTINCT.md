@@ -1,29 +1,14 @@
- variant of DISTINCT is DISTINCT ON. now Let’s explore this.
-
- 
-DISTINCT ON 
-When distinct cannot return unique row when all columns combination is not unique then we can use distinct on clause which will give  
-first row  from that set of duplicate rows.The column which we are specifying in DISTINCT ON <col_name> should also be present 
-in the ORDER BY clause; otherwise you will get an error.
-
-Example 
-You can use `DISTINCT ON` to display the first of each value in `col1`:
-
-```sql
-postgres=#  SELECT DISTINCT ON (col1) col1,col2,col3 FROM test ORDER BY col1;
- col1 | col2 |    col3    
-------+------+------------
-    1 | abc  | 2015-09-10
-    2 | xyz  | 2015-09-13
-    3 | tcs   | 2015-01-15
-(3 rows)
-```
-
-
 # DISTINCT
-`DISTINCT` is used to **remove duplicate** rows from the SELECT query and only display one unique row from result set.<br>
+`DISTINCT` **removes** **all duplicate rows** from the result set (one row is kept from each group of duplicates).<br>
+`DISTINCT ON ( expression [, ...])` keeps only the **first row** of **each set** of rows where the given `expressions` evaluate to equal.<br>
+Note that the **first row** of each set is **unpredictable** unless `ORDER BY` is used to ensure that the desired row appears first.
+
+<br>
+
+## Examples
+Consider table:
 ```sql
-postgres=# SELECT * FROM test;
+SELECT * FROM test;
   col1 | col2 |    col3    
 ------+------+------------
      1 | abc  | 2015-09-10
@@ -35,9 +20,24 @@ postgres=# SELECT * FROM test;
 (6 rows)
 ```
 
-1. You can use `SELECT` with `DISTINCT` to find only the non-duplicate values from column `col1`:
+<br>
+
+1. For instance, you can use `DISTINCT ON` to display **only** the **first** of each value in `col1`:
 ```sql
-postgres=# SELECT DISTINCT(col1) FROM test ORDER BY col1;
+SELECT DISTINCT ON (col1) col1,col2,col3 FROM test ORDER BY col1;
+ col1 | col2 |    col3    
+------+------+------------
+    1 | abc  | 2015-09-10
+    2 | xyz  | 2015-09-13
+    3 | tcs  | 2015-01-15
+(3 rows)
+```
+
+<br>
+
+2. You can use `SELECT` with `DISTINCT` to find only the non-duplicate values from column `col1`:
+```sql
+SELECT DISTINCT(col1) FROM test ORDER BY col1;
   col1 
 ------
     1
@@ -46,9 +46,11 @@ postgres=# SELECT DISTINCT(col1) FROM test ORDER BY col1;
 (3 rows)
 ```
 
-1. You can use `SELECT` with `DISTINCT` on **two** columns of the table:
+<br>
+
+3. You can use `SELECT` with `DISTINCT` on **two** columns of the table:
 ```sql
-postgres=#  SELECT DISTINCT col1,col2 FROM test ORDER BY 1;
+ SELECT DISTINCT col1,col2 FROM test ORDER BY 1;
  col1 | col2 
 ------+------
     1 | abc
@@ -56,11 +58,12 @@ postgres=#  SELECT DISTINCT col1,col2 FROM test ORDER BY 1;
     3 | tcs
 (3 rows)
 ```
- 
 
-3. You can also use SELECT with DISTINCT on **all** columns of the table:
+<br>
+
+4. You can also use `SELECT` with `DISTINCT` on **all** columns of the table:
 ```sql
-postgres=#  SELECT DISTINCT col1,col2,col3 FROM test ORDER BY 1;
+ SELECT DISTINCT col1,col2,col3 FROM test ORDER BY 1;
  col1 | col2 |    col3    
 ------+------+------------
     1 | abc  | 2015-09-11
