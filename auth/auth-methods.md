@@ -52,17 +52,29 @@ A comma-separated list of **roles** or `all` is allowed for this field as well.
 <br>
 
 ## METHOD
-Methods `md5` and `scram-sha-256` use password set by `CREATE USER` or `ALTER ROLE` command.<br>
+Methods `password`, `md5` and `scram-sha-256` use password set by `CREATE USER` or `ALTER ROLE` command.<br>
+The method `password` sends the password in **clear-text** and is therefore vulnerable to password “sniffing” attacks.<br>
 If **no** password has been set up for a user, the stored password is `NULL` and password authentication will **always fail** for that user.<br>
 This methods are supported on **all** connection types (**local**, **host**, ... ).<br>
 
 Method `peer` (aka **peer authentication**) is for *Unix* and method `sspi` is for *Windows*.<br>
 The `peer` method obtains the client's user name from the **OS**: if client's user name matches the OS username – auth is **ok**, if not – auth **fails**.<br>
 **Peer authentication** is only available on OS providing the `getpeereid()` function.<br>
-This method is **only** supported on connection type **local**.
+This method is **only** supported on connection type **local**.<br>
 
-After installation is completed there is user `postgres` is created. 
-- user `postgres` by default is `superuser` and has **all privileges**. 
-- user `postgres` by default has **no password**.
+After installation is completed there is 
+- user `postgres` is created **by default**;
+- user `postgres` **by default** is `superuser` and has **all privileges**;
+- user `postgres` **by default** has **no password**;
 
-By default, the user `postgres` is locked and **cannot** be used over TCP/IP connections. To login at user `postgres` in TCP/IP connections password **must** be set for user `postgres`.
+So, by default, the user `postgres` is locked and **cannot** be used for **remote connections**.<br>
+
+To **unlock** `postgres` account for **remote connections**:
+1. Allow access from any IP:
+```bash
+echo "host  all  all  0.0.0.0/0  md5" | sudo tee -a /etc/postgresql/12/main/pg_hba.conf
+```
+2. Set password for `postgres` user:
+```bash
+sudo -u postgres psql -c "ALTER ROLE postgres WITH PASSWORD 'postgres';"
+```
