@@ -27,10 +27,10 @@ my_db=# \du
 **Ownership** gives to role **full access** to the **owned object**.<br>
 
 > **Note**<br>
-> by default, role owns any objects that was created by that role;<br>
-> each *database* and *table* have **exactly one owner**;<br>
-> **owner** can **modify** or **delete** objects it owns;<br>
-> **superuser** can **modify** or **delete** objects that it even **doesn't own**;
+> By default, role owns any objects that was created by that role;<br>
+> Each *database* and *table* have **exactly one owner**;<br>
+> **Owner** can **modify** or **delete** objects it owns;<br>
+> **Superuser** can **modify** or **delete** objects that it even **doesn't own**;
 
 <br>
 
