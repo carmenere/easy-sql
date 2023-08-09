@@ -1,7 +1,7 @@
 # Create extension
 1. **SQL**:
 ```sql
-CREATE EXTENSION IF NOT EXISTS btree_gist;
+CREATE EXTENSION [IF NOT EXISTS] btree_gist;
 ```
 2. **psql**:
 ```sql
