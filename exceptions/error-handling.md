@@ -63,6 +63,32 @@ END $$;
 ```
 
 <br>
+
+3. Rename constraint
+```sql
+DO $$ BEGIN
+    ALTER TABLE child RENAME CONSTRAINT child_forbid_empty_range TO forbid_empty_range;
+EXCEPTION
+    WHEN undefined_object THEN NULL;
+END $$;
+```
+Here, the error `undefined_object` occurs when constraint with name `child_forbid_empty_range` doesn't exist.
+
+<br>
+
+4. Create `ENUM`:
+```sql
+DO $$ BEGIN
+    CREATE TYPE colors AS ENUM (
+        'black', 
+        'white'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+```
+
+<br>
  
 The `SQLSTATE` variable contains **error code**.<br>
 The `SQLERRM` function returns the **error message** associated with an **error code**.<br>

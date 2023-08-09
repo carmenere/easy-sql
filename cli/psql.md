@@ -32,15 +32,24 @@ PGUSER=${USER_NAME} PGDATABASE=${USER_DB} psql
 <br>
 
 ```sql
-bar=# \d my_table
-                   Table "pg_temp_3.my_table"
- Column |         Type          | Collation | Nullable | Default
---------+-----------------------+-----------+----------+---------
- id     | bigint                |           | not null |
- name   | character varying(15) |           | not null |
- prefix | inet                  |           | not null |
+bar=# \d+ child
+                                                        Table "public.child"
+ Column |          Type          | Collation | Nullable |              Default              | Storage  | Stats target | Description
+--------+------------------------+-----------+----------+-----------------------------------+----------+--------------+-------------
+ id     | bigint                 |           | not null | nextval('child_id_seq'::regclass) | plain    |              |
+ pid    | bigint                 |           | not null |                                   | plain    |              |
+ name   | character varying(255) |           | not null |                                   | extended |              |
+ range  | int4range              |           | not null |                                   | extended |              |
 Indexes:
-    "my_table_id_prefix_excl" EXCLUDE USING gist (id WITH =, prefix inet_ops WITH &&)
+    "child_pkey" PRIMARY KEY, btree (id)
+    "child_pid_name_key" UNIQUE CONSTRAINT, btree (pid, name) DEFERRABLE INITIALLY DEFERRED
+    "child_pid_range_excl" EXCLUDE USING gist (pid WITH =, range WITH &&)
+Check constraints:
+    "child_forbid_empty_range" CHECK (range <> int4range(1, 1))
+    "child_range_bounds" CHECK (lower(range) >= 0 AND upper(range) < 1000)
+Foreign-key constraints:
+    "child_pid_fkey" FOREIGN KEY (pid) REFERENCES parent(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
+Access method: heap
 ```
 
 <br>
