@@ -1,7 +1,7 @@
 # DISTINCT
-`DISTINCT` **removes** **all duplicate rows** from the result set (one row is kept from each group of duplicates).<br>
-`DISTINCT ON ( expression [, ...])` keeps only the **first row** of **each set** of rows where the given `expressions` evaluate to equal.<br>
-Note that the **first row** of each set is **unpredictable** unless `ORDER BY` is used to ensure that the desired row appears first.
+Both `DISTINCT` and `DISTINCT ON ( expression [, ...])` **remove all duplicate rows**:
+- `DISTINCT` applies to an **entire row**;
+- `DISTINCT ON ( expression [, ...])` keeps only the **first row** of **each set** of rows where the given `expressions` evaluate to equal. Note that the **first row** of each set is **unpredictable** unless `ORDER BY` is used to ensure that the desired row appears first.
 
 <br>
 

@@ -1,4 +1,6 @@
 # Create table
+By default, every column is **nullable**.<br>
+
 ```sql
 DROP TABLE IF EXISTS child;
 DROP TABLE IF EXISTS parent;
@@ -6,6 +8,7 @@ DROP TABLE IF EXISTS parent;
 CREATE TABLE IF NOT EXISTS parent (
     id BIGSERIAL NOT NULL,
     name VARCHAR(255) NOT NULL,
+    active bool NOT NULL DEFAULT TRUE,
     PRIMARY KEY (id),
     CHECK ((char_length((name)::text) > 0))
 );
