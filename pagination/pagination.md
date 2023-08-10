@@ -24,3 +24,19 @@ SELECT * FROM test_table JOIN (SELECT id FROM test_table ORDER BY id LIMIT 10000
 So, it is knows where row with ordinal number `100000` is.
 
 `SELECT * FROM test_table ORDER BY id LIMIT 100000, 30` **doesn't** use index, because there are **all** columns. So, it is **doesn't** know where row with ordinal number `100000` is and return whole table.
+
+<br>
+
+## DECLARE CURSOR
+1. **Create** cursor:
+```sql
+DECLARE CURSOR my_cursor
+IS
+SELECT * FROM customers
+WHERE cust_email IS NULL
+```
+2. **Open** cursor:
+```sql
+OPEN CURSOR CustCursor
+```
+3. Read cursor by `FETCH`.

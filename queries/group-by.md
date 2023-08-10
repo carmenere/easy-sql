@@ -1,8 +1,5 @@
 # GROUP BY
 The `GROUP BY` clause **divides** the rows returned from the `SELECT` statement **into groups**.<br>
-For **each group**, you can apply an **aggregate function**: 
-- `SUM()` to calculate the **sum of items** in the groups;
-- `COUNT()` to calculate the **number of items** in the groups.
 
 <br>
 
@@ -38,6 +35,23 @@ GROUP BY
 ORDER BY 
     customer_id;
 ```
+
+<br>
+
+# Aggregate functions
+For **each group**, you can apply an **aggregate function**: 
+- `SUM(col)` calculates the **sum of values** in column `col` **per** the group;
+- `COUNT(col)` calculates the **number of items** in column `col` **per** the group;
+- `MIN(col)` finds **max value** in column `col` **per** the group;
+- `MAX(col)` finds **min value** in column `col` **per** the group;
+- `AVG(col)` calculates the **average of values** in column `col` **per** the group;
+
+<br>
+
+> **Note**:<br>
+> All aggregate functions **ignore** `NULL` values.
+> `COUNT(*)` **takes into account** `NULL` values.
+> Aggregate functions can be applied **only** to **unique** values: `SELECT avg(DISTINCT price)`.
 
 <br>
 
