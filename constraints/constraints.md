@@ -1,13 +1,18 @@
 # Constraints
-- **check** constraint
-- **foreign key** constraint
-- **primary key** constraint
-- **unique** constraint
-- **constraint** trigger
-- **exclusion** constraint
+**Column** level:
+- `DEFAULT value`;
+- `NOT NULL` or `NULL`;
+- `UNIQUE` (per column);
 
-> **Note**:<br>
-> **Not-null constraint** hasn't **name** and field **constraint** in **error message** from pg is filled by `NONE`.
+<br>
+
+**Table** level:
+- `PRIMARY KEY`;
+- `FOREIGN KEY`;
+- `INDEX`;
+- `UNIQUE`
+- `CHECK`;
+- `EXCLUDE`;
 
 <br>
 
@@ -28,6 +33,11 @@
 |23505|**unique_violation**|
 |23514|**check_violation**|
 |23P01|**exclusion_violation**|
+
+<br>
+
+> **Note**:<br>
+> **Not-null constraint** hasn't **name** and field "**constraint**" in **error message** from pg is filled by `NONE`.
 
 <br>
 

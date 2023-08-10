@@ -1,7 +1,7 @@
-
+# Create table
 ```sql
-DROP TABLE child;
-DROP TABLE parent;
+DROP TABLE IF EXISTS child;
+DROP TABLE IF EXISTS parent;
 
 CREATE TABLE IF NOT EXISTS parent (
     id BIGSERIAL NOT NULL,
@@ -23,5 +23,3 @@ CREATE TABLE IF NOT EXISTS child (
     CONSTRAINT child_forbid_empty_range CHECK ((range <> int4range(1, 1)))
 );
 ```
-
-

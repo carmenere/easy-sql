@@ -24,3 +24,4 @@ CREATE TABLE my_table
     EXCLUDE USING gist (id WITH =, prefix inet_ops WITH &&)
 );
 ```
+Here `inet_ops`	is an **operator class**.
