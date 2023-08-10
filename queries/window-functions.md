@@ -30,7 +30,7 @@ ORDER BY id;
 
 <br>
 
-# PARTITION BY
+## PARTITION BY
 - `PARTITION BY [expression]` inside window splits it into partitions and applies **window function** to every partition independently.<br>
 - if `PARTITION BY [expression]` is **not** specified then the **whole window** is **partition**.<br>
 
@@ -48,24 +48,10 @@ ORDER BY section, rating_in_section;
 
 ```
 
-# PARTITION BY
-```sql
-SELECT * FROM (
-    SELECT *, count(*)
-    OVER
-    (PARTITION BY
-        name,
-        status,
-        comment
-    ) AS count
-    FROM tbl
-) AS mytbl
-WHERE mytbl.count > 1;
-```
-
 <br>
 
 # Select first row from every group
+## CTE version
 ```sql
 WITH summary AS (
     SELECT  id, 
@@ -76,9 +62,12 @@ WITH summary AS (
 SELECT s.*
   FROM summary s
  WHERE s.rk = 1;
+```
 
+<br>
 
-
+## Subquery version
+```sql
 SELECT s.* FROM (
     SELECT  id, 
             tstz, 
@@ -89,11 +78,18 @@ SELECT s.* FROM (
 WHERE s.rk = 1;
 ```
 
+<br>
+
 # TOP N
+## Preparations
 ```sql
 DROP TABLE logs;
 CREATE TABLE logs (uri VARCHAR(255) NOT NULL, src_ip INET NOT NULL);
+```
 
+<br>
+
+```sql
 INSERT INTO logs VALUES
     ('/auto', '1.1.1.1'),
     ('/auto', '2.2.2.2'),
