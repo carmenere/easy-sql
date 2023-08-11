@@ -37,3 +37,46 @@ DECLARE
 `$$` is a **label**, **anonymous** or **named**:
 - `$$` **anonymous** label;
 - `$foo$` **named** label;
+
+<br>
+
+## LOOPS
+```sql
+DO $$
+DECLARE
+    r RECORD; 
+    cnt INT; 
+BEGIN
+    FOR r IN 
+        SELECT table_name FROM information_schema.tables 
+        WHERE table_schema = 'pg_catalog' AND table_type != 'VIEW' 
+        ORDER BY table_name DESC 
+    LOOP 
+        EXECUTE 'select count(*) cnt FROM ' || r.table_name INTO cnt; 
+        RAISE NOTICE '% %', r.table_name, cnt; 
+    END LOOP; 
+END $$;
+```
+
+<br>
+
+```sql
+DO $$
+DECLARE
+    i INTEGER;
+    j INTEGER;
+    q TEXT;
+BEGIN
+    FOR i IN 1 .. 5 LOOP
+        q = 'create temp table temp_table_' || i || '(';
+        FOR j IN 1 .. 5 LOOP
+            IF j <> 1 THEN
+                q = q || ',';
+            END IF;
+            q = q || 'attr_' || j || ' int';
+        END LOOP;
+        q = q || ');';
+        EXECUTE q;
+    END LOOP;
+END $$;
+```
