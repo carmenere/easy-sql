@@ -105,82 +105,55 @@ SET timezone = 'Europe/Moscow';
 ```sql
 SET timezone = 'UTC';
 
-CREATE TABLE timestamp_demo (ts TIMESTAMP, tstz TIMESTAMPTZ);
+CREATE TABLE ts_demo (ts TIMESTAMP, tstz TIMESTAMPTZ);
 
-INSERT INTO timestamp_demo (ts, tstz) VALUES ('2017-01-01 00:00:00', '2017-01-01 00:00:00');
+INSERT INTO ts_demo (ts, tstz) VALUES ('2017-01-01 00:00:00', '2017-01-01 00:00:00');
 
-SELECT * FROM  timestamp_demo;
-
-SET timezone = 'America/New_York';
-SELECT * FROM  timestamp_demo;
-
-SET timezone = 'UTC';
-
-SELECT date_part('hour', ts) h1,
-       date_part('minute', ts) m1,
-       date_part('second', ts) s1,
-       date_part('timezone_hour', tstz) tz,
-       date_part('hour',tstz) h2,
-       date_part('minute', tstz) m2,
-       date_part('second', tstz) s2
-FROM  timestamp_demo;
-
-CAST types:
-SELECT ts::date, tstz::date FROM  timestamp_demo;
-
-SET timezone = 'Europe/Moscow';
-
-INSERT INTO timestamp_demo (ts, tstz) VALUES ('2017-01-01 00:00:00', '2017-01-01 00:00:00');
--- no offset
-
-SELECT ts, tstz AT TIME ZONE 'MSK' FROM  timestamp_demo;
-SELECT ts, tstz AT TIME ZONE 'UTC' FROM  timestamp_demo;
-
-AT TIME ZONE 'MSK' - convert time with tz to local time of some region
-
-SELECT ts, tstz AT TIME ZONE 'MSK' FROM  timestamp_demo;
-         ts          |      timezone       
----------------------+---------------------
- 2017-01-01 00:00:00 | 2017-01-01 00:00:00
+SELECT * FROM  ts_demo;
+         ts          |          tstz
+---------------------+------------------------
+ 2017-01-01 00:00:00 | 2017-01-01 00:00:00+00
 (1 row)
 
+SET timezone = 'America/New_York';
 
-SELECT ts, tstz AT TIME ZONE 'UTC' FROM  timestamp_demo;
-         ts          |      timezone       
----------------------+---------------------
- 2017-01-01 00:00:00 | 2016-12-31 21:00:00
-
-
-INSERT INTO timestamp_demo (ts, tstz) VALUES ('2017-01-01 00:00:00', '2017-01-01 00:00:00+00');
-
--- offset is 00
-
-SELECT ts, tstz AT TIME ZONE 'MSK' FROM  timestamp_demo;
-         ts          |      timezone       
----------------------+---------------------
- 2017-01-01 00:00:00 | 2017-01-01 00:00:00
- 2017-01-01 00:00:00 | 2017-01-01 03:00:00 
-(2 rows)
-
-SELECT ts, tstz AT TIME ZONE 'UTC' FROM  timestamp_demo;
-         ts          |      timezone       
----------------------+---------------------
- 2017-01-01 00:00:00 | 2016-12-31 21:00:00
- 2017-01-01 00:00:00 | 2017-01-01 00:00:00
+SELECT * FROM  ts_demo;
+         ts          |          tstz
+---------------------+------------------------
+ 2017-01-01 00:00:00 | 2016-12-31 19:00:00-05
+(1 row)
 ```
 
 <br>
 
-### Conclusions
+### AT TIME ZONE
+```sql
+SELECT ts, tstz AT TIME ZONE 'MSK' FROM  ts_demo;
+         ts          |      timezone
+---------------------+---------------------
+ 2017-01-01 00:00:00 | 2017-01-01 03:00:00
+(1 row)
 
-1. In first case PGSQL calcs UTC time as `2017-01-01 00:00:00 - 3 hours = 2016-12-31 21:00:00`, cause there was **not** explicit time zone, but PGSQL system setting of time zone was 
+SELECT ts, tstz AT TIME ZONE 'UTC' FROM  ts_demo;
+         ts          |      timezone
+---------------------+---------------------
+ 2017-01-01 00:00:00 | 2017-01-01 00:00:00
+(1 row)
+```
 
-SET timezone = 'Europe/Moscow';
+<br>
 
- SHOW TIMEZONE;
-   TimeZone    
----------------
- Europe/Moscow
+### Casting
+```sql
+SELECT ts::date, tstz::date FROM  ts_demo;
+     ts     |    tstz
+------------+------------
+ 2017-01-01 | 2016-12-31
+(1 row)
 
-
-2. In second case PGSQL treats UTC time as 2017-01-01 00:00:00, cause there was explicit time zone.
+SELECT ts::date, tstz::date, ts::time FROM  ts_demo;
+     ts     |    tstz    |    ts
+------------+------------+----------
+ 2017-01-01 | 2016-12-31 | 00:00:00
+(1 row)
+```
