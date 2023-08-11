@@ -93,3 +93,4 @@ END $$;
 The `SQLSTATE` variable contains **error code**.<br>
 The `SQLERRM` function returns the **error message** associated with an **error code**.<br>
 The second `RAISE;` **reraises original** exception.<br>
+
