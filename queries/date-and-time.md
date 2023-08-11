@@ -48,27 +48,11 @@ bar=#
 ```
 <br>
 
-
-TimeZone (string)
-Sets the time zone for displaying and interpreting time stamps.
-
-
-The SQL standard differentiates `timestamp without time zone` and `timestamp with time zone` literals by the presence of a `+` or `-` symbol and **time zone offset** after the time.<br>
-
-Hence, according to the standard:
-- `TIMESTAMP '2004-10-19 10:23:54'` is a `timestamp without time zone`;
-- `TIMESTAMP '2004-10-19 10:23:54+02'` is a `timestamp with time zone`;
-
-<br>
-
-> **Note**<br>
-> PostgreSQL will treat both of the above as `timestamp without time zone`.<br>
-> To ensure that a literal is treated as `timestamp with time zone`, give it the correct **explicit** type: `TIMESTAMP WITH TIME ZONE '2004-10-19 10:23:54+02'`.
-
-<br>
+# Time zones
+The **SQL standard** differentiates `TIMESTAMP WITHOUT TIME ZONE` and `TIMESTAMP WITH TIME ZONE` literals by the presence of a `+` or `-` symbol and **time zone offset** after the time.<br>
 
 A **time zone offset** of `+N` indicates that the  **local time** is **ahead** of **UTC** by `N` hours.<br>
-A **time zone offset** of `-N` indicates that the  **local time** is `N` hours **behind** **UTC**.<br>
+A **time zone offset** of `-N` indicates that the  **local time** is `N` hours **behind UTC**.<br>
 
 Consider example: `22:30+04`, here
 - `22:30` is a **local time**;
@@ -76,18 +60,29 @@ Consider example: `22:30+04`, here
 
 So, UTC is equal `22:30 – 4 = 18:30`.
 
+Hence, according to the standard:
+- `TIMESTAMP '2004-10-19 10:23:54'` is a `TIMESTAMP WITHOUT TIME ZONE`;
+- `TIMESTAMP '2004-10-19 10:23:54+02'` is a `TIMESTAMP WITH TIME ZONE`;
+
 <br>
 
-In a literal that has been determined to be `timestamp without time zone`, PostgreSQL will **silently ignore** any time zone indication. That is, the resulting value is derived from the date/time fields in the input value, and is not adjusted for time zone.<br>
-For `timestamp with time zone`, the **internally stored value** is **always** in **UTC** (Universal Coordinated Time, traditionally known as Greenwich Mean Time, **GMT**).<br>
+> **Note**<br>
+> PostgreSQL will treat both of the above as `TIMESTAMP WITHOUT TIME ZONE`.<br>
+> To ensure that a `literal` is treated as `TIMESTAMP WITH TIME ZONE`, give it the correct **explicit** type: `TIMESTAMP WITH TIME ZONE '2004-10-19 10:23:54+02'`.
+
+<br>
+
+## Internal representation
 PostgreSQL uses the widely-used **Olson time zone database** for information about historical time zone rules.<br>
+In a `literal` that has been determined to be `TIMESTAMP WITHOUT TIME ZONE`, PostgreSQL will **silently ignore** any time zone indication.<br>
+For `TIMESTAMP WITH TIME ZONE`, the **internally stored value** is **always** in **UTC** (Universal Coordinated Time, traditionally known as Greenwich Mean Time, **GMT**).<br>
 
-An input value that has an explicit time zone specified is **converted** to **UTC** using the **appropriate offset** for that time zone.<br>
-If **no** time zone is stated in the input string, then it is assumed to be in the time zone indicated by the system's `timezone` parameter, and is **converted** to **UTC** using the offset for the timezone zone.<br>
+An input value that has an **explicit** time zone specified is **converted** to **UTC** using the **appropriate offset** for that time zone.<br>
+If **no** time zone is stated in the input string, then it is assumed to be in the time zone indicated by the system's `timezone` parameter, and is **converted** to **UTC** using the offset for the system's `timezone`.<br>
 
-When a `timestamp with time zone` value is output, it is **always** **converted** from **UTC** to the **current timezone zone**, and displayed as **local time** in that zone. To see the time in another time zone, either change timezone or use the `AT TIME ZONE` construct.<br>
+When a value of type `TIMESTAMP WITH TIME ZONE` is output, it is **always converted** from **UTC** to the **current timezone zone**, and displayed as **local time** in that zone. To see the time in another time zone, either change timezone or use the `AT TIME ZONE` construct.<br>
 
-Conversions between `timestamp without time zone` and `timestamp with time zone` normally assume that the `timestamp without time zone` value should be taken or given as timezone local time. A different time zone can be specified for the conversion using `AT TIME ZONE`.<br>
+Conversions between `TIMESTAMP WITHOUT TIME ZONE` and `TIMESTAMP WITH TIME ZONE` normally assume that the `TIMESTAMP WITHOUT TIME ZONE` value should be taken or given as timezone local time. A different time zone can be specified for the conversion using `AT TIME ZONE`.<br>
 
 <br>
 
