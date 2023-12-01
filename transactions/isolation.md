@@ -7,35 +7,21 @@ There are **4** read phenomena:
 |**Dirty read**|A transaction sees any **uncommitted** changes made by another concurrent transaction.|
 |**Non-repeatable read**|A transaction sees any **committed** changes made by another concurrent transaction, i.e., a transaction **re-reads** data it has previously read and finds that data has been **modified** by another committed concurrent transaction.|
 |**Phantom read**|A transaction **re-executes** a query returning a **set of rows** that satisfy some condition and finds that the result **set of rows** has **changed** due to another committed concurrent transaction.|
-|**Serialization anomaly**|When the **result** of parallel execution of transactions **differ** from the **result** of **sequential** execution of transactions in any order.|
+|**Serialization anomaly**|When the **result** of parallel execution of transactions **depends on order** in which transactions are commited.<br>Example of **serialization anomaly** is **write skew anomaly**.|
 
 <br>
 
 **Phantom read** is a similar to **non-repeatable read**, but affects queries that search for **multiple** rows instead of one.<br>
 
-## Serialization anomaly
-Example of **Serialization anomaly** is **write skew**.<br>
-There are **2** rows in the database. One has the value **white** and the other **black**.<br>
-Transaction `T1` updates **all** `white` **to** `black` and transaction `T2` **all** `black` **to** `white`:
-```sql
--- white to black
-update table
-set value = 'black'
-where value = 'white'
-
--- black to white
-update table
-set value = 'white'
-where value = 'black'
-```
-
 <br>
 
-The working sets of each transaction are completely **disjoint**, but every transaction use condition that is affected by another transaction.<br>
-
-If run concurrently at isolation level **lower** then **serializable level**, the result is that **all values** in rows are **swapped**.<br>
-
-If run concurrently at **serializable level**, query end up with **all** values **white** or **all black**.
+# Snapshot isolation vs. Serializability
+**Snapshot isolation** has been adopted by plenty database management systems, such as Oracle, MySQL, PostgreSQL, Microsoft SQL Server (2005 and later).<br>
+The main reason for its adoption is that it allows **better performance** than **serializability**.<br>
+In practice **snapshot isolation** is implemented within **multiversion concurrency control** (**MVCC**).<br>
+A transaction executing under **snapshot isolation** appears to operate on a **personal snapshot** of the database, taken **at the start of the transaction**.<br>
+When the transaction concludes, it will successfully commit only if the values updated by the transaction have not been changed externally since the snapshot was taken.<br>
+Such a **write–write conflict** will cause the transaction to abort.<br>
 
 <br>
 
