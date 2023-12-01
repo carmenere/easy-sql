@@ -1,5 +1,5 @@
 # Write skew anomaly
-**Serialization anomaly** appears when the **result** of parallel execution of transactions **depends on order** in which transactions are commited.<br>
+**Serialization anomaly** appears when the **result** of execution of concurrent transactions **depends on order** in which transactions are commited.<br>
 Example of **serialization anomaly** is **write skew anomaly**.<br>
 Let's consider transactions that are executed **simultaneously**: **T1** and **T2**.<br>
 Transaction `T1` updates **all** `white` **to** `black` and transaction `T2` **all** `black` **to** `white`:
