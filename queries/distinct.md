@@ -1,7 +1,12 @@
 # DISTINCT
-Both `DISTINCT` and `DISTINCT ON ( expression [, ...])` **remove all duplicate rows**:
-- `DISTINCT` applies to an **entire row**;
-- `DISTINCT ON ( expression [, ...])` keeps only the **first row** of **each set** of rows where the given `expressions` evaluate to equal. Note that the **first row** of each set is **unpredictable** unless `ORDER BY` is used to ensure that the desired row appears first.
+Both `DISTINCT col_a, col_b` and `DISTINCT ON (col1, col2) col1, col2, col3` **remove all duplicate rows**:
+- `DISTINCT col_a, col_b` select all rows `col_a, col_b` with **non-duplicate** tuples `(col_a, col_b)`;
+- `DISTINCT ON (col1, col2) col1, col2, col3` select all rows `col1, col2, col3` with **non-duplicate** tuples `(col1, col2)`;
+
+<br>
+
+> **Note**:<br>
+> Use the `ORDER BY` clause with the `DISTINCT ON` or `DISTINCT` to make the result set **predictable**.
 
 <br>
 
@@ -22,20 +27,7 @@ SELECT * FROM test;
 
 <br>
 
-1. For instance, you can use `DISTINCT ON` to display **only** the **first** of each value in `col1`:
-```sql
-SELECT DISTINCT ON (col1) col1,col2,col3 FROM test ORDER BY col1;
- col1 | col2 |    col3    
-------+------+------------
-    1 | abc  | 2015-09-10
-    2 | xyz  | 2015-09-13
-    3 | tcs  | 2015-01-15
-(3 rows)
-```
-
-<br>
-
-2. You can use `SELECT` with `DISTINCT` to find only the non-duplicate values from column `col1`:
+1. Display only the **non-duplicate** values from column `col1`:
 ```sql
 SELECT DISTINCT(col1) FROM test ORDER BY col1;
   col1 
@@ -48,7 +40,20 @@ SELECT DISTINCT(col1) FROM test ORDER BY col1;
 
 <br>
 
-3. You can use `SELECT` with `DISTINCT` on **two** columns of the table:
+2. Display only rows with **non-duplicate** values from column `col1`:
+```sql
+SELECT DISTINCT ON (col1) col1,col2,col3 FROM test ORDER BY col1;
+ col1 | col2 |    col3
+------+------+------------
+    1 | abc  | 2015-09-10
+    2 | xyz  | 2015-09-13
+    3 | tcs  | 2015-01-15
+(3 rows)
+```
+
+<br>
+
+3. Display only rows with **non-duplicate** tuples `(col1, col2)`:
 ```sql
  SELECT DISTINCT col1,col2 FROM test ORDER BY 1;
  col1 | col2 
