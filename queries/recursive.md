@@ -21,64 +21,103 @@ A **recursive CTE** has three elements:
 
 ## Example
 ```sql
-CREATE TABLE employees (
-    employee_id serial PRIMARY KEY,
-    full_name VARCHAR NOT NULL,
-    manager_id INT
+DO $$ BEGIN
+    CREATE TYPE vkinds AS ENUM (
+        'foo',
+        'bar',
+        'fizzbazz',
+        'foobar'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+CREATE TABLE IF NOT EXISTS vertices (
+    id BIGINT NOT NULL,
+    kind vkinds NOT NULL,
+
+    PRIMARY KEY (id, kind)
 );
 
-INSERT INTO employees (
-    employee_id,
-    full_name,
-    manager_id
+CREATE TABLE IF NOT EXISTS edges (
+    id BIGSERIAL,
+    -- lnode
+    lid BIGINT NOT NULL,
+    lkind vkinds NOT NULL,
+    -- rnode
+    rid BIGINT NOT NULL,
+    rkind vkinds NOT NULL,
+
+    FOREIGN KEY (lid, lkind) REFERENCES vertices(id, kind) ON DELETE CASCADE,
+    FOREIGN KEY (rid, rkind) REFERENCES vertices(id, kind) ON DELETE CASCADE
+);
+
+INSERT INTO vertices (
+    id,
+    kind
 )
 VALUES
-    (1, 'Michael North', NULL),
-    (2, 'Megan Berry', 1),
-    (3, 'Sarah Berry', 1),
-    (4, 'Zoe Black', 1),
-    (5, 'Tim James', 1),
-    (6, 'Bella Tucker', 2),
-    (7, 'Ryan Metcalfe', 2),
-    (8, 'Max Mills', 2),
-    (9, 'Benjamin Glover', 2),
-    (10, 'Carolyn Henderson', 3),
-    (11, 'Nicola Kelly', 3),
-    (12, 'Alexandra Climo', 3),
-    (13, 'Dominic King', 3),
-    (14, 'Leonard Gray', 4),
-    (15, 'Eric Rampling', 4),
-    (16, 'Piers Paige', 7),
-    (17, 'Ryan Henderson', 7),
-    (18, 'Frank Tucker', 8),
-    (19, 'Nathan Ferguson', 8),
-    (20, 'Kevin Rampling', 8);
+    (10, 'foo'::vkinds),
+    (20, 'bar'::vkinds),
+    (30, 'fizzbazz'::vkinds),
+    (40, 'foo'::vkinds),
+    (50, 'bar'::vkinds),
+    (60, 'fizzbazz'::vkinds),
+    (70, 'foo'::vkinds),
+    (80, 'bar'::vkinds),
+    (90, 'fizzbazz'::vkinds),
+    (100, 'foobar'::vkinds);
+
+INSERT INTO edges (
+    id,
+    lid,
+    lkind,
+    rid,
+    rkind
+)
+VALUES
+    (1, 10, 'foo'::vkinds, 20, 'bar'::vkinds),
+    (2, 10, 'foo'::vkinds, 50, 'bar'::vkinds),
+    (3, 40, 'foo'::vkinds, 20, 'bar'::vkinds),
+    (4, 40, 'foo'::vkinds, 50, 'bar'::vkinds),
+    (5, 40, 'foo'::vkinds, 80, 'bar'::vkinds),
+    (6, 70, 'foo'::vkinds, 80, 'bar'::vkinds),
+    (7, 20, 'bar'::vkinds, 30, 'fizzbazz'::vkinds),
+    (8, 50, 'bar'::vkinds, 60, 'fizzbazz'::vkinds),
+    (9, 50, 'bar'::vkinds, 90, 'fizzbazz'::vkinds),
+    (10, 80, 'bar'::vkinds, 30, 'fizzbazz'::vkinds),
+    (11, 80, 'bar'::vkinds, 60, 'fizzbazz'::vkinds),
+    (12, 80, 'bar'::vkinds, 90, 'fizzbazz'::vkinds),
+    (13, 60, 'fizzbazz'::vkinds, 100, 'foobar'::vkinds);
 ```
 
 <br>
 
 The following query returns all subordinates of the manager with the id `2`:
 ```sql
-WITH RECURSIVE subordinates AS (
+WITH RECURSIVE walks AS (
     SELECT
-        employee_id,
-        manager_id,
-        full_name
+        e.id,
+        e.lid,
+        e.lkind,
+        e.rid,
+        e.rkind
     FROM
-        employees
-    WHERE
-        employee_id = 2
+        edges e
+    WHERE e.lid = 10
 
     UNION
 
     SELECT
-        e.employee_id,
-        e.manager_id,
-        e.full_name
+        e.id,
+        e.lid,
+        e.lkind,
+        e.rid,
+        e.rkind
     FROM
-        employees e
-    INNER JOIN subordinates AS s ON s.employee_id = e.manager_id
+        edges e
+    INNER JOIN walks AS w ON w.rid = e.lid AND e.rkind IN ('foobar'::vkinds, 'fizzbazz'::vkinds)
 )
 
-SELECT * FROM  subordinates;
+SELECT * FROM  walks;
 ```
