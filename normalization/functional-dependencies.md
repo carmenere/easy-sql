@@ -1,12 +1,111 @@
-# Functional dependency
-The **functional dependency** is a **relationship** that exists between **two** sets of attributes under some relation `R`.<br>
-The **functional dependency** is denoted as `X → Y`, where
-- the **attribute set** on the **left** side (`X`) is called **determinant**;
-- the **attribute set** on the **right** side (`Y`) is called the **dependent**.
+# Table of contents
+- [Table of contents](#table-of-contents)
+- [What is relation?](#what-is-relation)
+  - [Data type](#data-type)
+  - [Tuple](#tuple)
+  - [Relation](#relation)
+  - [In RDBMS](#in-rdbms)
+- [Functional dependency](#functional-dependency)
+  - [Regular vs. irregular](#regular-vs-irregular)
+  - [Valid and not valid FD](#valid-and-not-valid-fd)
+    - [Case 1](#case-1)
+    - [Case 2](#case-2)
+    - [Case 3](#case-3)
+    - [Case 4 (not valid FD)](#case-4-not-valid-fd)
+- [Types of FD](#types-of-fd)
+  - [Trivial FD](#trivial-fd)
+    - [Examples](#examples)
+  - [Non-trivial FD](#non-trivial-fd)
+    - [Example](#example)
+  - [Partial dependency](#partial-dependency)
+  - [Multivalued FD](#multivalued-fd)
+    - [Example](#example-1)
+  - [Transitive FD](#transitive-fd)
+    - [Example](#example-2)
+  - [Fully functional dependency](#fully-functional-dependency)
+    - [Example](#example-3)
+- [Types of keys](#types-of-keys)
 
 <br>
 
-Functional dependencies are **directional**: `A → B` does not mean than `B → A`.
+# What is relation?
+## Data type
+**Data type** (or simply **type**) is usually specified by
+- a set of **allowed** values;
+- a set of **allowed operations** on these values;
+- a set of **constraints** on these values;
+- a **representation** of these values as machine types (**memory layout**).
+
+<br>
+
+## Tuple
+A **tuple** is a **finite ordered sequence** (list) of **elements**.
+The number of **elements** in **tuple** is called the **degree**, e.g., `n-tuple` refers to a **tuple** of degree `n` (`n ≥ 0`).<br>
+
+<br>
+
+## Relation
+Consider N **sets**:
+```
+D1 = {d11, d12, ... , d1K}
+D2 = {d21, d22, ... , d2L}
+
+...
+
+DN = {dN1, dN2, ... , dNM}
+```
+
+<br>
+
+A **relation** `R` over set of sets `D = {D1, D2, ..., Dn}` is a **set of tuples** `(d1, d2, ..., dn)`, where each **data element** (or simply **element**) `dj` is a member of set `Dj`.<br>
+Sets `D1, D2, ..., Dn` are called **domains** or **attribute names** (or simply **attributes**) of *relation* `R` and *relation* `R` is denoted as `R(D1, D2, ..., Dn)`.<br>
+In other words, **attributes** are **named arguments** of relation.<br>
+Actually, every set `Dj` contains **allowed values** for appropriate element `dj` in tuple. So, **domain** (**attribute**) is effectively a **data type**.<br>
+Each **element** `dj` in tuple is a **value** of some **attribute** (**domain**) `Dj`. So, **element** is also termed an **attribute value**.<br>
+A **heading** of relation `R` is a **tuple** of **all** its **attributes names**, e.g., `(D1, D2, ..., Dn)`.<br>
+
+
+<br>
+
+## In RDBMS
+A **relation** is a **two**-dimensional **table**.<br>
+A **column** of table is an **attribute** (**domain**).<br>
+A **row** of table is a **tuple** or **instance of entity**. So, **row** is a **type of entity**.<br>
+A **relation schema** is a **heading** and **set of constraints** defined in terms of this *heading*.<br>
+
+<br>
+
+# Functional dependency
+In math:
+- **11** --> **function** --> **aa**;
+  - **11** is an **input**;
+  - **aa** is an **output**;
+
+<br>
+
+Consider **relation** `R(A,B)`, where `A` and `B` are **atributes** of relation `R`:
+|`A`|`B`|
+|:--|:--|
+|1|a|
+|2|b|
+|3|c|
+
+<br>
+
+We see that if we know `A` we know `B`. In other words:
+- value of `A` **determines** value of `B`;
+- value of `B` **is determined** by value of `A`;
+
+<br>
+
+So, `A -> B` is a **functional dependancy** (**FD**).<br>
+
+<br>
+
+The **functional dependency** is a **relationship** that exists **between attributes** under some relation `R`.<br>
+The **functional dependency** is denoted as `{X} → {Y}` or `X → Y`, where `X` and `Y` are **attributes**. Functional dependency is **directional**: `X → Y` does **not** mean than `Y → X`.
+- the **attribute** on the **left** side (`X`) is called **determinant**;
+- the **attribute** on the **right** side (`Y`) is called the **dependent**.
 
 <br>
 
@@ -16,39 +115,66 @@ Variants to read notation `X → Y`:
 
 <br>
 
-# Validating a FD
-If the **same** value of `X` gives the **different** values of `Y`, then it is **not** FD, for instance:
-|`X`|`Y`|
-|:--|:--|
-|`{1, 2}`|`{33}`|
-|`{1, 2}`|`{55}`|
+## Regular vs. irregular
+There can be **more than one** attribute on the **left** side, but there is always **only one** attribute on the **right** side. But we can **combine** several functional dependencies `{A, B} → {Q}` and `{A, B} → {W}` **into one**: `{A, B} → {Q, W}`. So, `{A, B} → {Q, W}` is really shorthand for **two** functional dependencies.<br>
 
-<br>
-
-But **different** values of `X` can give the **same** values of `Y` and it is valid **FD**:
-|`X`|`Y`|
-|:--|:--|
-|`{1, 2}`|`{33}`|
-|`{3, 4}`|`{33}`|
-
-
-<br>
-
-# Regular vs. irregular
-- a functional dependency `X → Y` is **regular** if `Y` contains only a **single** attribute.
-- a functional dependency `X → Y` is **irregular** if `Y` contains more than one attributes.
+A functional dependency `X → Y` is **regular** if `Y` contains only a **single** attribute.<br>
+A functional dependency `X → Y` is **irregular** if `Y` contains **more than one** attributes.<br>
 
 <br>
 
 For example, `AB → C` is **regular**, but `AB → CD` is **irregular**, where `A`, `B`, `C`, and `D` are attributes.<br>
 
-Strictly speaking, there is always **only one** attribute on the **right** side, but we can **combine** several functional dependencies **into one**:
-- `{A, B} → {Q}`;
-- `{A, B} → {W}`;
-- `{A, B} → {Q, W}`;
+<br>
 
-> **Note**:<br>
-> Remember, that `{A, B} → {Q, W}` is really shorthand for **two** functional dependencies.<br>
+## Valid and not valid FD
+### Case 1
+|Determinant|Dependent|
+|:--|:--|
+|1|a|
+|1|a|
+
+<br>
+
+When there are the **same** *determinants* and they all have the **same** corresponding *dependents* such a case is a **valid** FD.<br>
+
+<br>
+
+### Case 2
+|Determinant|Dependent|
+|:--|:--|
+|1|a|
+|2|b|
+
+<br>
+
+When there are the **different** *determinants* and they all have the **different** corresponding *dependents* such a case is a **valid** FD.<br>
+
+<br>
+
+### Case 3
+|Determinant|Dependent|
+|:--|:--|
+|1|a|
+|2|a|
+
+<br>
+
+When there are the **different** *determinants* and they all have the **same** corresponding *dependents* such a case is a **valid** FD.<br>
+
+<br>
+
+### Case 4 (not valid FD)
+|Determinant|Dependent|
+|:--|:--|
+|1|a|
+|1|b|
+
+<br>
+
+When there are the **same** *determinants* and they all have **different** corresponding *dependents* such a case is **not** *valid* FD.<br>
+
+<br>
 
 <br>
 
@@ -89,18 +215,50 @@ FD `X → Y` is **completely non-trivial** *iif* `Y ∩ X = ∅`.
 
 <br>
 
-# Partial dependency
-In **partial** FD the **non-prime** attributes depend on the **part** (**proper subset**) of **candidate** key, **not** complete **candidate** key.
+## Partial dependency
+Consider **relation** `R(A,B,C,D)`:
+|A|B|C|D|
+|:-|:-|:-|:-|
+|1|22|d|f|
+|2|33|q|m|
 
-How to find partial dependency:
-1. Identify **all** **candidate keys**.
-2. Defferntiate **prime** and **non-prime** attributes.
-3. Find **non-prime** attribus that are **determined by** a **part** of any **candidate** key.
+And consider **2 FD** in this relation `R`:
+- `{A,B} -> {D}`;
+- `{B} -> {C}`;
 
 <br>
 
-### Example
-- `{A,B}` is a **candidate** key, `C` is **non-prime** attribute, so `B -> C` is a **partial** FD.
+Also we know that `{A} -> {A}` and `{B} -> {B}`, because **every attribute** is **trivially** depends on **itself**.<br>
+
+So, we can rewrite all above as `{A,B} -> {A,B,C,D}`.<br>
+
+We see that `A` and `B` **together** is a **candidate key** `{A,B}`, because they both determine **all other** attributes in relation `R`.<br>
+
+We can **differentiate** all atributes in 2 types:
+- **prime** attributes;
+- **non-prime** attributes;
+
+<br>
+
+Attributes that are **part** of **candidate key** are called **prime**.<br>
+Attributes that are **not part** of **candidate key** are called **non-prime**.<br>
+
+<br>
+
+In example above,
+- attributes `A` and `B` are **prime**;
+- attributes `C` and `D` are **non-prime**;
+
+<br>
+
+There are 2 FD in example above, the FD `{B} -> {C}` is called **partial** FD because `B` is **not** a *candidate key* but it is a **part** of *candidate key* `{A,B}`.<br>
+
+**Partial** FD occurs when at least one **non-prime** attribute depends on the **part** (**proper subset**) of **candidate** key, **not** complete **candidate** key.<br>
+
+How to find partial dependency:
+1. Identify **all candidate keys**.
+2. Defferntiate **prime** and **non-prime** attributes.
+3. Find **non-prime** attribus that are **determined by** a **part** of any **candidate** key.
 
 <br>
 
@@ -137,7 +295,7 @@ So, this table introduces **transitive dependency** `A → C`.
 
 <br>
 
-# Fully functional dependency
+## Fully functional dependency
 Assume that there is FD `X → Y`, and `X = {X1, X2, ..., Xn}`.<br>
 If *dependent* (`Y`) of FD `X → Y` is not **determined** by any subset of its *determinant* (`{X1}, {X1,X2}, {X2,X3}, {X2,X3,X4}, ... `) and it is **determined** only by full subset of its *determinant* (`X = {X1, X2, ..., Xn}`), then `X → Y` is called a **fully functional**.
 
@@ -148,7 +306,7 @@ If *dependent* (`Y`) of FD `X → Y` is not **determined** by any subset of its 
 
 <br>
 
-# Keys
+# Types of keys
 A **superkey** is a **set of attributes** that **uniquely** identifies **each tuple** of a relation.<br>
 Because **superkey** values are **unique**, tuples with the **same** superkey value must also have the **same** **non-key** attribute values.<br>
 That is, **non-key attributes** are functionally dependent on the **superkey**.<br>
@@ -169,289 +327,3 @@ A **primary key** is the **candidate key** chosen to be **primary**. Usually it 
 A **prime attribute** of a relation is an attribute that is a member of **any** *candidate key*.<br>
 
 A **non-prime attribute** of a relation is an attribute that **isn't** a **prime attribute**, i.e., a **non-prime attribute** of a relation is an attribute that is **not** a member of any **candidate key** of the relation.<br>
-
-<br>
-
-# Set of functional dependencies
-**Set of FDs** `F` of a relation is the **set** of **all** FDs presented in this relation.<br>
-For instance, there is given relation `R(A, B, C, D, E, F)` and its **FD set** `F = {AB->C, BC->AD, D->E, CF->B}`. 
-
-<br>
-
-# Attribute closure
-The **closure** of **attribute set** `X` (or just **attribute closure**), denoted as `X+`, with respect to **FD set** `F` is a set of **all** attributes which can be functionally determined from *attribute set* `X`.<br>
-
-Assume that there are some relation `R`, some `F` and the **set of attributes** `X = {A}`.<br>
-The general algorithm to find **attribute closure** `X+` of `X`:
-1. Add `A` and `B` to the result set `X+` (every set of attributes `X` is **trivially** dependent on itself).
-2. Apply **Armstrong's inference rules** to determine new attributes that are functionally dependent on the attributes already contained in `X+`.
-   - if such attributes exists add them to the result set `X+`
-3. Repeat step **2** until no more attributes can be added to the result set `X+`.
-
-<br>
-
-Consider ralation `R = (A, B, C, D)` and `F = {{A,B} -> {D}, {B} -> {C}}`.<br>
-Then, consider trivial FD: `{A,B} -> {A,B}`, so `{A,B}` can identify all attributes in `R` using attributes `{A,B}`.<br>
-`{A,B}` is also called **candidate** key and by using **candidate** key we can identify complete tuple `(a, b, c, d)`.<br>
-`{A,B}` is also called closure and denoted `{A,B}+`: `{A,B}+ = {A, B, C, D}`.<br>
-Attribus `A` and `B` are **prime attributes**.<br>
-Attribus `C` and `D` are **non-prime attributes**.<br>
-
-<br>
-
-### Example 1
-Assume that there is the relation `R(A, B, C, D, E)` and `F = {AB -> CD, D -> E, A -> C, B -> D}`.<br>
-
-We can determine `A+` as:    
-1. Add `A` to the result set `A+ = {A}`.
-2. Get all the attribute which are derived from `A` and add them to the result set `A+`:
-   - `A -> C` (from given **set of FDs**);
-   - add `C` to the `A+`;
-   - now `A+` contains `{A,C}`;
-3. No other attribute can be derived from `A` and `C` hence.
-
-**Result**: `A+ = {A,C}`.
-
-<br>
-
-### Example 2
-Assume that there is the relation `R(A, B, C, D, E)` and `F = {AB -> CD, D -> E, A -> C, B -> D}`.<br>
-
-We can determine `B+` as:    
-1. Add `B` to the result set `B+ = {B}`.
-2. Get all the attribute which are derived from `B`:
-   - `B -> D` (from given **set of FDs**);
-   - add `D` to the `B+`;
-   - now `B+` contains `{B,D}`;
-3. Get all the attribute which are either derived by `D` or any combination of `BD` (all subsets of `B+` excluding `{B} and {}`)
-   - `D -> E`
-   - add `E` to the `B+`;
-   - now `B+` contains `{B,D,E}`;
-4. No other attribute can be derived from `B`, `D`, `E` or from any subset of `{B, D, E}` hence.
-
-**Result**: `B+ = {B,D,E}`.
-
-<br>
-
-# FD closure
-The **closure** of **set of FDs** (or just **FD closure**) `F`, denoted as `F+`, is the **set** of **all regular FDs** that can be derived from `F`.<br>
-There are **inference rules** (aka **Armstrong's inference rules**) to infer **all regular FDs** from `F`.<br>
-**Armstrong's inference rules** are **sufficient** to infer `F+` from given `F`.<br>
-Some inferred FDs are trivial: each **dependent** is a **subset** of the **determinant**, e.g., `AB → A`, `AB → B`.
-
-<br>
-
-# Find candidate key by clojure
-Let `F` is a set of FDs, and `R` a relation.<br>
-
-A **candidate key** is a set `C` of attributes in `R` such that
-- `C+` includes all the attributes in `R`;
-- there is no **proper subset** `S` of `C` such that `S+` includes **all** the attributes in `R`.
-
-<br>
-
-A **proper subset** `S` is a **subset** of `C` such that `S != C`.
-
-<br>
-
-### Example
-Assume that there is relation `R(A, B, C , D)` and `F = {A → B, B → C }`:
-- `A` is **not** a candidate key `C`, because `A+ = {A, B, C }` which does **not** include `D`.
-- `ABD+ = {A, B, C , D}`, but `ABD` is **not** a candidate key `C` because there is a **proper subset** `AD` of `ABD` such that `AD+` includes all the attributes: `AD+ = {A, B, C , D}`.
-- `AD` is a **candidate key** `C`.
-
-<br>
-
-# Closure example 1
-Assume that there is relation `R(A, B, C)` and `F = {{A} → {B}, {B} → {C}}`.
-
-<br>
-
-## All attribute closures
-- `{}+ = {}`
-- `{A}+ = {A,B,C}` **Candidate** key
-- `{B}+ = {B,C}`
-- `{C}+ = {C}`
-- `{A,B}+ = {A,B,C}` **Super** key
-- `{A,C}+ = {a,c,b}` **Super** key
-- `{B,C}+ = {B,C}`
-- `{A,B,C}+ = {A,B,C}` **Super** key
-
-<br>
-
-## FD closure
-`F+` is **set** of following FDs (some of them are **trivial**)
-
-### Trivial
-- `{A} → {A}`
-- `{B} → {B}`
-- `{C} → {C}`
-- `{A,B} → {A,B}`
-- `{A,B} → {A}`
-- `{A,B} → {B}`
-- `{A,C} → {A,C}`
-- `{A,C} → {A}`
-- `{A,C} → {C}`
-- `{B,C} → {B,C}`
-- `{B,C} → {B}`
-- `{B,C} → {C}`
-- `{A,B,C} → {A,B,C}`
-- `{A,B,C} → {A,B}`
-- `{A,B,C} → {A,C}`
-- `{A,B,C} → {A}`
-- `{A,B,C} → {B,C}`
-- `{A,B,C} → {B}`
-- `{A,B,C} → {C}`
-
-<br>
-
-### Infered from given FD set
-- `{A} → {A,B,C}`
-- `{A} → {A,B}`
-- `{A} → {A,C}`
-- `{A} → {B,C}`
-- `{A} → {B}`
-- `{A} → {C}`
-- `{A,B} → {A,B,C}`
-- `{A,B} → {A,C}`
-- `{A,B} → {B,C}`
-- `{A,B} → {C}`
-- `{A,C} → {A,B,C}`
-- `{A,C} → {A,B}`
-- `{A,C} → {B,C}`
-- `{A,C} → {B}`
-
-#### Violates 3NF
-- `{B} → {B,C}`
-- `{B} → {C}`
-
-<br>
-
-# Closure example 2
-Assume that there is relation `R(A, B, C, D)` and `F = {{A,B,C}->{D}, {D}->{A}`.
-
-<br>
-
-## All attribute closures
-- `{}+ = {}`
-- `{a}+ = {a}`
-- `{b}+ = {b}`
-- `{c}+ = {c}`
-- `{d}+ = {d,a}`
-- `{a,b}+ = {a,b}`
-- `{a,c}+ = {a,c}`
-- `{a,d}+ = {a,d}`
-- `{b,c}+ = {b,c}`
-- `{b,d}+ = {b,d,a}`
-- `{c,d}+ = {c,d,a}`
-- `{a,b,c}+ = {a,b,c,d}` **Candidate** key
-- `{a,b,d}+ = {a,b,d}`
-- `{a,c,d}+ = {a,c,d}`
-- `{b,c,d}+ = {b,c,d,a}` **Candidate** key
-- `{a,b,c,d}+ = {a,b,c,d}` **Super** key
-
-<br>
-
-## FD closure
-`F+` is **set** of following FDs (some of them are **trivial**)
-
-<br>
-
-### Trivial
-- `{a} → {a}`
-- `{b} → {b}`
-- `{c} → {c}`
-- `{d} → {d}`
-- `{a,b} → {a,b}`
-- `{a,b} → {a}`
-- `{a,b} → {b}`
-- `{a,c} → {a,c}`
-- `{a,c} → {a}`
-- `{a,c} → {c}`
-- `{a,d} → {a,d}`
-- `{a,d} → {a}`
-- `{a,d} → {d}`
-- `{b,c} → {b,c}`
-- `{b,c} → {b}`
-- `{b,c} → {c}`
-- `{b,d} → {b,d}`
-- `{b,d} → {b}`
-- `{b,d} → {d}`
-- `{c,d} → {c,d}`
-- `{c,d} → {c}`
-- `{c,d} → {d}`
-- `{a,b,c} → {a,b,c}`
-- `{a,b,c} → {a,b}`
-- `{a,b,c} → {a,c}`
-- `{a,b,c} → {a}`
-- `{a,b,c} → {b,c}`
-- `{a,b,c} → {b}`
-- `{a,b,c} → {c}`
-- `{a,b,d} → {a,b,d}`
-- `{a,b,d} → {a,b}`
-- `{a,b,d} → {a,d}`
-- `{a,b,d} → {a}`
-- `{a,b,d} → {b,d}`
-- `{a,b,d} → {b}`
-- `{a,b,d} → {d}`
-- `{a,c,d} → {a,c,d}`
-- `{a,c,d} → {a,c}`
-- `{a,c,d} → {a,d}`
-- `{a,c,d} → {a}`
-- `{a,c,d} → {c,d}`
-- `{a,c,d} → {c}`
-- `{a,c,d} → {d}`
-- `{b,c,d} → {b,c,d}`
-- `{b,c,d} → {b,c}`
-- `{b,c,d} → {b,d}`
-- `{b,c,d} → {b}`
-- `{b,c,d} → {c,d}`
-- `{b,c,d} → {c}`
-- `{b,c,d} → {d}`
-- `{a,b,c,d} → {a,b,c,d}`
-- `{a,b,c,d} → {a,b,c}`
-- `{a,b,c,d} → {a,b,d}`
-- `{a,b,c,d} → {a,b}`
-- `{a,b,c,d} → {a,c,d}`
-- `{a,b,c,d} → {a,c}`
-- `{a,b,c,d} → {a,d}`
-- `{a,b,c,d} → {a}`
-- `{a,b,c,d} → {b,c,d}`
-- `{a,b,c,d} → {b,c}`
-- `{a,b,c,d} → {b,d}`
-- `{a,b,c,d} → {b}`
-- `{a,b,c,d} → {c,d}`
-- `{a,b,c,d} → {c}`
-- `{a,b,c,d} → {d}`
-
-<br>
-
-### Infered from given FD set
-- `{a,b,c} → {a,b,c,d}`
-- `{a,b,c} → {a,b,d}`
-- `{a,b,c} → {a,c,d}`
-- `{a,b,c} → {a,d}`
-- `{a,b,c} → {b,c,d}`
-- `{a,b,c} → {b,d}`
-- `{a,b,c} → {c,d}`
-- `{a,b,c} → {d}`
-- `{b,c,d} → {a,b,c,d}`
-- `{b,c,d} → {a,b,c}`
-- `{b,c,d} → {a,b,d}`
-- `{b,c,d} → {a,b}`
-- `{b,c,d} → {a,c,d}`
-- `{b,c,d} → {a,c}`
-- `{b,c,d} → {a,d}`
-- `{b,c,d} → {a}`
-
-#### Violates BCNF
-- `{d} → {a,d}`
-- `{d} → {a}`
-- `{b,d} → {a,b,d}`
-- `{b,d} → {a,b}`
-- `{b,d} → {a,d}`
-- `{b,d} → {a}`
-- `{c,d} → {a,c,d}`
-- `{c,d} → {a,c}`
-- `{c,d} → {a,d}`
-- `{c,d} → {a}`
