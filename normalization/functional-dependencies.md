@@ -278,7 +278,7 @@ Consider FD `A → {B, C}`, if there is **no** FD between all its *dependents* (
 <br>
 
 ## Transitive FD
-FD is said to be **transitive** one **non-prime** attribute determines another **non-prime** attribute **indirectly** through third **non-prime** attribute.<br>
+FD is said to be **transitive** when some **non-prime** attribute determines another **non-prime** attribute **indirectly** through third **non-prime** attribute.<br>
 Consider 3 FDs: `A → B`, `B → C` and `A → C`, then `A → C` is called a **transitive** FD.<br>
 
 <br>
@@ -301,7 +301,7 @@ So, this table introduces **transitive dependency** `A → C`.
 <br>
 
 ## Fully functional dependency
-Consider FD `{X1, X2, ..., Xn} → Y`, if *dependent* (`Y`) **cannot** be **determined** by any **proper subset** of its *determinant* (`{X1}, {X1,X2}, {X2,X3}, {X2,X3,X4}, ... `) and it is **determined** only by full set of its *determinant* `{X1, X2, ..., Xn}`, then `{X1, X2, ..., Xn} → Y` is called a **fully functional** FD.<br>
+Consider FD `{X1, X2, ..., Xn} → Y`, if *dependent* (`Y`) **cannot** be **determined** by any **proper subset** of its *determinant* (`{X1}, {X1,X2}, {X2,X3}, {X2,X3,X4}, ... `) and it is **determined** only by full set of its *determinant* `{X1, X2, ..., Xn}`, then such FD is called a **fully functional** FD.<br>
 
 <br>
 
