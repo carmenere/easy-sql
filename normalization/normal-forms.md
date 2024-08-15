@@ -37,7 +37,7 @@ Each **NF** remove particular type of FD.<br>
 
 ## 1NF
 A relation is in **1NF** iif:
-- every attribute in relation is **singled valued** attribute, i.e., relation **doesn't** contain any **composite** or **multivalued** attribute;
+- every attribute in relation is of **scalar** type, i.e., relation **doesn't** contain any **composite** or **multivalued** attribute;
 - all tuples in relation are uniqie;
 
 <br>
@@ -51,13 +51,11 @@ More formal: a relation is in **1NF** iif **no** attribute domain has relations 
 
 A relation is in **2NF** iif:
 - relation is in **1NF**;
-- there is **no** *partial dependency* in relation, i.e., every **non-prime** attribute of the relation is dependent on the **whole** of *every* **candidate** key;
+- there is **no** *partial dependency* in relation, i.e., every **non-prime** attribute of the relation must depend on the **whole** *candidate key*;
 
 <br>
 
 Note that **2NF** **doesn't** put any restriction on the **non-prime** to **non-prime** attribute dependency.<br>
-
-A **FD** on a **proper subset** of **any** **candidate** key is a **violation** of **2NF**, i.e., such relation is not in **2NF**.
 
 <br>
 
@@ -75,12 +73,12 @@ Consider followong table:
 
 <br>
 
-There is **one** **candidate key** is `{Manufacturer, Model}`.<br>
+There is **one candidate key** is `{Manufacturer, Model}`.<br>
 There is **FD** `{Manufacturer} -> {Manufacturer country}`.<br>
 
 So,
-- `{Manufacturer}` is **proper subset** of `{Manufacturer, Model}` **candidate key**;
-- `{Manufacturer country}` is **not** part of a **candidate key**, because `{Manufacturer country, Model}` is not unique tuple, so it is a **non-prime attribute**;
+- `{Manufacturer}` is **proper subset** of `{Manufacturer, Model}` *candidate key*;
+- `{Manufacturer country}` is **not** part of a *candidate key*, because `{Manufacturer country, Model}` is not unique tuple, so it is a **non-prime attribute**;
 
 <br>
 
@@ -105,7 +103,7 @@ To make the relation **conform** to **2NF**, it is necessary to split it into **
 **Carlo Zaniolo's definition** states that a relation is in **3NF** iif for **each** of its functional dependencies `X → Y`, **at least** **one** of the following conditions holds:
 1. `Y ⊆ X`, i.e., `X → Y` is **trivial** FD;
 2. `X` is a **superkey**;
-3. **Every** element of `Y \ X` (**set difference**), is a **prime attribute**, i.e., **each** attribute in `Y \ X` is contained in some **candidate key**.
+3. **Every** element of `Y \ X` (**set difference**), is a **prime attribute**, i.e., **each** attribute in `Y \ X` is contained in some *candidate key*.
 
 Zaniolo's definition gives a clear sense of the **difference** between **3NF** and **BCNF**:
 - **3NF** allow the **right** side of the **FD** to be a **prime attribute**;

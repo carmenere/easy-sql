@@ -15,7 +15,7 @@
 - [Types of FD](#types-of-fd)
   - [Trivial FD](#trivial-fd)
     - [Examples](#examples)
-  - [Non-trivial FD](#non-trivial-fd)
+  - [Non-trivial](#non-trivial)
     - [Example](#example)
   - [Partial dependency](#partial-dependency)
   - [Multivalued FD](#multivalued-fd)
@@ -165,10 +165,12 @@ When there are the **different** *determinants* and they all have the **same** c
 <br>
 
 ### Case 4 (not valid FD)
-|Determinant|Dependent|
+|Determinant (e.g. `Name`)|Dependent (e.g. `Age`)|
 |:--|:--|
-|1|a|
-|1|b|
+|Alice|45|
+|Alice|17|
+
+In the table above, *attribute* `Name` **cannot uniquely** identify *attribute* `Age`, because **names may be repeated**.
 
 <br>
 
@@ -190,28 +192,31 @@ Types of FD:
 <br>
 
 ## Trivial FD
-In **trivial** FD, a *dependent* (`Y`) is always a **subset** of the *determinant* (`X`), i.e. if `X → Y` is FD and `Y ⊆ X`, then it is called a **trivial** FD.<br>
-Every set of attributes `X` is **trivially** dependent on itself: `X → X`.<br>
+Consider FD `X → Y`, if a *dependent* is a **subset** of the *determinant*, i.e. `Y ⊆ X`, then it is called a **trivial** FD.<br>
+**Trivial** FD doesn't provide any new information about the relations between attributes.<br>
+
+Note, **every attribute** `X` is **trivially** depends on **itself**: `{X} → {X}`.<br>
 
 <br>
 
 ### Examples
-- `{id, name} → {name}`
+- `A → B`
+- `{Id, Name} → {Name}`
 - `{A,B} → {A}`
 - `{A,B,C} → {A,C}`
 
 <br>
 
-## Non-trivial FD
-In **non-trivial** FD, the *dependent* (`Y`) is **not** a **subset** of the *determinant* (`X`), i.e. if `X → Y` is FD and `Y ⊈ X`, then it is called a **non-trivial** FD.<br>
+## Non-trivial 
+Consider FD `X → Y`, if a *dependent* **isn't subset** of the *determinant* (`Y ⊈ X`), then it is called a **non-trivial** FD.<br>
 FD `X → Y` is **completely non-trivial** *iif* `Y ∩ X = ∅`.
 
 <br>
 
 ### Example
-- `{id, name} → {age}`   (**completely non-trivial**)
-- `{A} → {B}`   (**completely non-trivial**)
-- `{A,C} → {B,C}`   (**non-trivial**)
+- `{id, name} → {age}` **completely non-trivial**, because `{id, name} ∩ {age} = ∅`;
+- `{A} → {B}` **completely non-trivial**;
+- `{A,C} → {B,C}` **non-trivial**, because `{B,C} ⊈ {A,C}`;
 
 <br>
 
@@ -263,18 +268,18 @@ How to find partial dependency:
 <br>
 
 ## Multivalued FD
-In **multivalued** FD, all attributes of the *dependent* (`Y = {A1, A2, ... }`) set are **independent**, i.e. if `A → {B, C}` is FD and there is **no** FD between `B` and `C`, then it is called a **multivalued** FD.<br>
+Consider FD `A → {B, C}`, if there is **no** FD between all its *dependents* (**neither** `B -> C` **nor** `C -> B`), then it is called a **multivalued** FD.<br>
 
 <br>
 
 ### Example
-- `{id} → {name, age}`, there is **no** FD between `name` and `age`
-- `{A} → {B, C}`
+- `{id} → {name, age}`, there is **no** FD between `name` and `age`;
 
 <br>
 
 ## Transitive FD
-FD is said to be **transitive** if it is **indirectly** formed by **two** FD, i.e. assume there are FDs: `A → B`, `B → C` and `A → C`, then `A → C` is called a **transitive** FD.<br>
+FD is said to be **transitive** one **non-prime** attribute determines another **non-prime** attribute **indirectly** through third **non-prime** attribute.<br>
+Consider 3 FDs: `A → B`, `B → C` and `A → C`, then `A → C` is called a **transitive** FD.<br>
 
 <br>
 
@@ -296,8 +301,7 @@ So, this table introduces **transitive dependency** `A → C`.
 <br>
 
 ## Fully functional dependency
-Assume that there is FD `X → Y`, and `X = {X1, X2, ..., Xn}`.<br>
-If *dependent* (`Y`) of FD `X → Y` is not **determined** by any subset of its *determinant* (`{X1}, {X1,X2}, {X2,X3}, {X2,X3,X4}, ... `) and it is **determined** only by full subset of its *determinant* (`X = {X1, X2, ..., Xn}`), then `X → Y` is called a **fully functional**.
+Consider FD `{X1, X2, ..., Xn} → Y`, if *dependent* (`Y`) **cannot** be **determined** by any **proper subset** of its *determinant* (`{X1}, {X1,X2}, {X2,X3}, {X2,X3,X4}, ... `) and it is **determined** only by full set of its *determinant* `{X1, X2, ..., Xn}`, then `{X1, X2, ..., Xn} → Y` is called a **fully functional** FD.<br>
 
 <br>
 
