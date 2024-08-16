@@ -278,8 +278,7 @@ Consider FD `A → {B, C}`, if there is **no** FD between all its *dependents* (
 <br>
 
 ## Transitive FD
-FD is said to be **transitive** when some **non-prime** attribute determines another **non-prime** attribute **indirectly** through third **non-prime** attribute.<br>
-Consider 3 FDs: `A → B`, `B → C` and `A → C`, then `A → C` is called a **transitive** FD.<br>
+Consider 2 FDs: `A → B` and `B → C`, where `A` is a *candidate key*. There is also **3rd FD** `A → C` exists according to **axiom of transitivity**. Thus, *candidate key* `A` **indirectly** determines attribute `C` through `B`, that's why FD `A → C` is called **transitive** FD.<br>
 
 <br>
 

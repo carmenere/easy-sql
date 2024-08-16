@@ -38,7 +38,7 @@ Each **NF** remove particular type of FD.<br>
 ## 1NF
 A relation is in **1NF** iif:
 - every attribute in relation is of **scalar** type, i.e., relation **doesn't** contain any **composite** or **multivalued** attribute;
-- all tuples in relation are uniqie;
+- all tuples in relation are **uniqie**;
 
 <br>
 
@@ -47,7 +47,7 @@ More formal: a relation is in **1NF** iif **no** attribute domain has relations 
 <br>
 
 ## 2NF
-2NF removes **partial** dependencies.<br>
+2NF removes **partial** FDs.<br>
 
 A relation is in **2NF** iif:
 - relation is in **1NF**;
@@ -92,22 +92,11 @@ To make the relation **conform** to **2NF**, it is necessary to split it into **
 <br>
 
 ## 3NF
-**3NF** removes **transitive** dependencies.<br>
+**3NF** removes all **transitive** FDs.<br>
 
 **Codd's definition** states that a relation is in **3NF** iif **both** of the following conditions hold:
 - relation is in **2NF**;
-- all **non-prime** attributes depend **only** on the **primary key**, i.e., **no** **non-prime attribute** of relation is **transitively** dependent on the **primary key**.
-
-<br>
-
-**Carlo Zaniolo's definition** states that a relation is in **3NF** iif for **each** of its functional dependencies `X → Y`, **at least** **one** of the following conditions holds:
-1. `Y ⊆ X`, i.e., `X → Y` is **trivial** FD;
-2. `X` is a **superkey**;
-3. **Every** element of `Y \ X` (**set difference**), is a **prime attribute**, i.e., **each** attribute in `Y \ X` is contained in some *candidate key*.
-
-Zaniolo's definition gives a clear sense of the **difference** between **3NF** and **BCNF**:
-- **3NF** allow the **right** side of the **FD** to be a **prime attribute**;
-- **BCNF** simply eliminates the **third** alternative, i.e., **doesn't** allow the **right** side of the **FD** to be a **prime attribute**;
+- all **non-prime** attributes depend **only** on the **primary key**, in other words, **doesn't** exist **any non-prime** attribute in a relation that **transitively** depends on the **primary key** through another **non-prime** attribute.
 
 <br>
 
@@ -133,7 +122,8 @@ To become **3NF** table must be splitted into 2 tables:
 <br>
 
 ## BCNF
-**BCNF** removes dependencies of **prime** attributes form **non-prime** attributes.<br>
+**3NF allows** situation when **non-prime** attribute determines **prime** attribute (which is a part of candidate key). Such FD **neither** *partial* **nor** *transitive*.
+**BCNF** removes all such dependencies of **prime** attributes form **non-prime** attributes.<br>
 
 A relation is in **BCNF** iif:
 - relation is in **3NF**;
@@ -150,7 +140,7 @@ Assume there is relation in **3NF**, it is  **NP-complete** to determine whether
 
 A relation is in **4NF** iif:
 - relation is in **BCNF**;
-- there is **no** *multivalued dependency* in relation;
+- there is **no multivalued dependency** in relation;
 
 <br>
 
