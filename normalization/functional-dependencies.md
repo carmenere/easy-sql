@@ -291,7 +291,7 @@ The **multivalued dependency** can be schematically depicted as shown below:
 
 <br>
 
-Consider relation $R(X,Y,Z)$. A **multivalued dependency** exists when there are **at least three attributes** (like $X$, $Y$ and $Z$) in a relation $R(X,Y,Z)$ and for a value of $X$ there is a well defined set of values of $Y$ and a well defined set of values of $Z$. However, the set of values of $Y$ is independent of set $Z$ and vice versa.<br>
+Consider some relation $R$. A **multivalued dependency** exists when there are **at least three attributes** (like $X$, $Y$ and $Z$) in a relation $R$ and for a value of $X$ there is a well defined set of values of $Y$ and a well defined set of values of $Z$. However, the set of values of $Y$ is independent of set $Z$ and vice versa.<br>
 
 Let the tuple $(x,y,z)$ denotes all values of relation $R(X,Y,Z)$, then whenever the tuples $t_1=(a,b,c)$ and $t_2=(a,d,e)$ exist in relation $R$, the tuples $t_3=(a,b,e)$ and $t_4=(a,d,c)$ should also exist in the relation `R`.
 
