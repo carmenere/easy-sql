@@ -268,12 +268,37 @@ How to find partial dependency:
 <br>
 
 ## Multivalued FD
-Consider FD `A → {B, C}`, if there is **no** FD between all its *dependents* (**neither** `B -> C` **nor** `C -> B`), then it is called a **multivalued** FD.<br>
+**Formal definition**: let $R$ be a relation schema and let $α ⊆ R$ and $β ⊆ R$ be sets of attributes. The **multivalued dependency** holds on $R$ if, for all pairs of tuples $t_1$ and $t_2$ such that $t_1[α] = t_2[α]$, there exist tuples $t_3$ and $t_4$ such that:
+- $t_1[α] = t_2[α] = t_3[α] = t_4[α]$
+- $t_1[β] = t_3[β]$
+- $t_2[β] = t_4[β]$
+- $t_1[R-(α ∪ β)] = t_4[R-(α ∪ β)]$
+- $t_2[R-(α ∪ β)] = t_3[R-(α ∪ β)]$
+
+<br>
+
+The **multivalued dependency** is denoted as $α ↠ β$ and read as $α$ **multidetermines** $β$.<br>
+
+A **multivalued dependency** $A ↠ B$ is **trivial** if $A ∪ B$ is the whole set of attributes of the relation, in other words, $A ∪ B = R$.<br>
+
+The **multivalued dependency** can be schematically depicted as shown below:
+|tuple|$α$|$β$|$R-(α ∪ β)$|
+|:----|:--|:--|:----------|
+|$t_1$|$a_1..a_n$|$b_1..b_m$|$d_1..d_k$|
+|$t_2$|$a_1..a_n$|$c_1..c_m$|$e_1..e_k$|
+|$t_3$|$a_1..a_n$|$b_1..b_m$|$e_1..e_k$|
+|$t_4$|$a_1..a_n$|$c_1..c_m$|$d_1..d_k$|
+
+<br>
+
+Consider some relation $R$. A **multivalued dependency** exists when there are **at least three attributes** (like $X$, $Y$ and $Z$) in a relation $R$ and for a value of $X$ there is a well defined set of values of $Y$ and a well defined set of values of $Z$. However, the set of values of $Y$ is independent of set $Z$ and vice versa.<br>
+
+Let the tuple $(x,y,z)$ denotes all values of relation $R(X,Y,Z)$, then whenever the tuples $t_1=(a,b,c)$ and $t_2=(a,d,e)$ exist in relation $R$, the tuples $t_3=(a,b,e)$ and $t_4=(a,d,c)$ should also exist in the relation `R`.
 
 <br>
 
 ### Example
-- `{id} → {name, age}`, there is **no** FD between `name` and `age`;
+- `{id} ↠ {name, age}`, there is **no** FD between `name` and `age`;
 
 <br>
 
