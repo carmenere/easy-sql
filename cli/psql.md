@@ -28,6 +28,8 @@ PGUSER=${USER_NAME} PGDATABASE=${USER_DB} psql
 |`\dv`|List all **views**.|
 |`\dT`|List all **data types**.|
 |`\x`|Change query output format to **pretty-format**.|
+|`\dp`|List privileges.|
+|`\dpp`|List default privileges.|
 
 <br>
 
@@ -111,3 +113,20 @@ CONTEXT:  SQL statement "CREATE TABLE test_table(
 PL/pgSQL function inline_code_block line 3 at SQL statement
 LOCATION:  heap_create_with_catalog, heap.c:1162
 ```
+
+<br>
+
+# `\gexec`
+## Example 1: SELECT ... WHERE NOT EXISTS
+```bash
+echo "SELECT '$QUERY1', '$QUERY2' WHERE NOT EXISTS ($CHECK_QUERY)" '\gexec' | psql
+```
+Here `\gexec` will execute `'$QUERY1'`, then `'$QUERY2'` if `$CHECK_QUERY` returns **nothing**.<br>
+
+<br>
+
+## Example 2: SELECT ... WHERE EXISTS
+```bash
+echo "SELECT '$QUERY1', '$QUERY2' WHERE EXISTS ($CHECK_QUERY)" '\gexec'
+```
+Here `\gexec` will execute `'$QUERY1'`, then `'$QUERY2'` if `$CHECK_QUERY` returns **at least one row**.
