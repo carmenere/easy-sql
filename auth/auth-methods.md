@@ -1,6 +1,60 @@
 # pg_hba.conf
-`pg_hba.conf` defines **authentication policies**.<br>
+The `pg_hba.conf` defines **authentication policies** or **authentication rows**.<br>
 Every **authentication policy** map **role** on **database**, **connection type**, **client’s remote socket**, **auth method**.<br>
+
+By default psql uses **peer** auth method.<br>
+
+**Each auth row has format**:<br>
+`TYPE  DATABASE  USER  ADDRESS  METHOD`
+
+- **TYPE** specifies **connection type**:
+  - **local** (aka local connection): connection over **UDS** (Unix Domain Socket);
+  - **host**: connection over **TCP/IP** with or without SSL;
+  - **hostssl**: _host_ **with** SSL;
+  - **hostnossl**: _host_ **without** SSL;
+- **DATABASE**: specifies the database(s) name(s) for this record match;
+- **USER**: comma-separated list of **roles** or `all` is allowed for this field as well.;
+- **ADDRESS** (if relevant for the connection type): contains either a **hostname** or **IP** (in CIDR format) of client or one of special keyword:
+  - **all**
+  - **samehost**
+  - **samenet**
+- **METHOD** specifies **auth method**
+  - **trust**: allow connection unconditionally;
+  - **reject**: reject the connection unconditionally;
+  - **md5**: challenge response mechanism over **md5**;
+  - **scram-sha-256**: challenge response mechanism over **sha256**;
+  - **password**: clear password;
+  - **peer**:
+    - obtains the provided by client username from OS and check they are match;
+    - this method is only available for **local connection** types and on OS providing the `getpeereid()` function;
+
+All three methods **password**, **md5*** and **scram-sha-256** are also called **password based auth**.<br>
+
+_Postgresql passwords_ are **separated** from _OS user passwords_. The **password for each user** is stored in the `pg_authid` system catalog.<br>
+_Postgresql passwords_ are managed with the SQL command `CREATE ROLE ...` and `ALTER ROLE ...`.<br>
+**If no password has been set** for user the stored password is `NULL` and **password based auth** will **always fail** for that user.<br>
+
+<br>
+
+After installation is completed there is
+- user `postgres` is created **by default**;
+- user `postgres` **by default** is `superuser` and has **all privileges**;
+- user `postgres` **by default** has **no password**;
+
+So, by default, the user `postgres` is locked and **cannot** be used for **remote connections**.<br>
+
+To **unlock** `postgres` account for **remote connections**:
+1. Allow access from any IP:
+```bash
+echo "host  all  all  0.0.0.0/0  md5" | sudo tee -a /etc/postgresql/12/main/pg_hba.conf
+```
+2. Set password for `postgres` user:
+```bash
+sudo -u postgres psql -c "ALTER ROLE postgres WITH PASSWORD 'new_password';"
+```
+
+<br>
+
 Example:
 ```bash
 $ cat /etc/postgresql/12/main/pg_hba.conf 
@@ -23,58 +77,3 @@ host    all             all             0.0.0.0/0               md5
 ```
 
 <br>
-
-## TYPE
-`TYPE` specifies **connection** type.
-`TYPE` can be:
-|Value|Description|
-|:----|:----------|
-|**local**|Unix-domain socket|
-|**host**|Either a plain or SSL-encrypted TCP/IP socket|
-|**hostssl**|Either a plain or SSL-encrypted TCP/IP socket|
-|**hostnossl**|Plain TCP/IP socket|
-
-<br>
-
-## ADDRESS       
-**Allowed source** IPv4/IPv6 prefixes.
-
-<br>
-
-## DATABASE
-Specifies the database(s) name(s) for this record match.
-
-<br>
-
-## USER
-A comma-separated list of **roles** or `all` is allowed for this field as well.
-
-<br>
-
-## METHOD
-Methods `password`, `md5` and `scram-sha-256` use password set by `CREATE USER` or `ALTER ROLE` command.<br>
-The method `password` sends the password in **clear-text** and is therefore vulnerable to password “sniffing” attacks.<br>
-If **no** password has been set up for a user, the stored password is `NULL` and password authentication will **always fail** for that user.<br>
-This methods are supported on **all** connection types (**local**, **host**, ... ).<br>
-
-Method `peer` (aka **peer authentication**) is for *Unix* and method `sspi` is for *Windows*.<br>
-The `peer` method obtains the client's user name from the **OS**: if client's user name matches the OS username – auth is **ok**, if not – auth **fails**.<br>
-**Peer authentication** is only available on OS providing the `getpeereid()` function.<br>
-This method is **only** supported on connection type **local**.<br>
-
-After installation is completed there is 
-- user `postgres` is created **by default**;
-- user `postgres` **by default** is `superuser` and has **all privileges**;
-- user `postgres` **by default** has **no password**;
-
-So, by default, the user `postgres` is locked and **cannot** be used for **remote connections**.<br>
-
-To **unlock** `postgres` account for **remote connections**:
-1. Allow access from any IP:
-```bash
-echo "host  all  all  0.0.0.0/0  md5" | sudo tee -a /etc/postgresql/12/main/pg_hba.conf
-```
-2. Set password for `postgres` user:
-```bash
-sudo -u postgres psql -c "ALTER ROLE postgres WITH PASSWORD 'postgres';"
-```
