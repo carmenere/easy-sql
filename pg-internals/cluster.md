@@ -10,6 +10,17 @@
 * [Schemas](#schemas)
 * [Table spaces](#table-spaces)
 * [Forks](#forks)
+* [Pages](#pages)
+  * [Page layout](#page-layout)
+    * [Page header](#page-header)
+    * [Line pointer (aka Item Id)](#line-pointer-aka-item-id)
+    * [Heap tuple](#heap-tuple)
+  * [TID](#tid)
+* [HOT mechanism](#hot-mechanism)
+* [Index access method](#index-access-method)
+  * [Operator class](#operator-class)
+* [TOAST](#toast)
+* [Varlena](#varlena)
 <!-- TOC -->
 
 <br>
@@ -176,10 +187,8 @@ Mapping between **OID alias types** and **system entities** is here [**OID types
 
 # Another identifiers used internally
 - **XID** is a **transaction ID** (also abbreviated **xact**);
-- **CID** is a **command ID** (in WAL);
-- **TID** is a **tuple** (aka **row** or **record**) ID;
-  - **TID** is a type of a system column **ctid**;
-  - a **value** of **TID** is a pair `(block number, item id number)`, that identifies the physical location of row within its table;
+- **CID** is a **command ID** (entry in **WAL**);
+- **TID** is a **tuple ID** (aka **Item Pointer**);
 
 <br>
 
@@ -326,7 +335,7 @@ pg_relation_filepath
 
 <br>
 
-There is function `pg_stat_file('abs_path')` that returns the **size of file**.<br> 
+There is built-in function `pg_stat_file('abs_path')` that returns the **size of file**.<br> 
 
 Knowing `base/101424/101438` we can obtain **size of file** `base/101424/101438`:
 ```sql
@@ -341,5 +350,508 @@ size
 
 **Segments** are stored in the directory: `PGDATA/base/%db_OID%`, where `%db_OID%` is an **OID of database** to which segments are belonged.<br>
 
-The **size of segment** is **limited** and **by default** the **max size of segment** is **1 Gb**. This limit **can be changed only at compile time** by parameter `--with-segsize`.<br>
+The **size of segment** is **limited** and **by default** the **max size of segment** is **1 Gb**.<br>
+The **size of segment can be set only during the configuration stage** when compiling PostgreSQL by parameter `--with-segsize`.<br>
 When segment reaches its limit postgresql creates **new** segment with the same name and **increments** its **suffix**.<br>
+
+<br>
+
+# Pages
+More details here: [**page layout**](https://www.postgresql.org/docs/current/storage-page-layout.html).<br>
+
+Each _segment_ is stored as an **array of pages** (aka **blocks**) of **fixed size** and by default it is **8 Kb**.<br>
+The **page size can be set only during the configuration stage** when compiling PostgreSQL by parameter `--with-blocksize`.<br>
+The **pages** within each _fork_ are **numered sequentially** from **0** and these numbers are called block numbers.<br>
+
+In a **table**, all the pages are **logically equivalent**, so a particular **item** (**row**) can be stored in any page.<br>
+In an **index**, the **first** page is generally **reserved as a metapage** holding **control information**, and **there can be different types of pages within the index**, depending on the **index access method**.<br>
+<br>
+
+![page layout](/img/pg-page-layout.png)
+
+<br>
+
+## Page layout
+| Section                       | Description                                                                                                                                                                                                         |
+|:------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Page header**               | Contains **general information** about the page. **24 bytes long**. Defined by structure `PageHeaderData`.                                                                                                          |
+| **Line pointers**             | **Array** of **line pointer**. A **line pointer** (aka **ItemId** or **lp**) holds **pointer to heap tuple**. **4 bytes long**. Defined by structure `ItemIdData`.                                                  |
+| **Free space** (aka **hole**) | The unallocated space between **end** of the **last** _line pointer_ and the **beginning** of the **first** _item_.                                                                                                 |
+| **Heap tuples**               | A **heap tuple** (aka **item** or **row** or just **tuple** or **record**) is an _individual_ **data value** itself. Every **heap tuple** has **tuple header** which is defined by structure `HeapTupleHeaderData`. |
+| **Special space**             | **Index access method specific data**. Different methods store different data. **Empty** in ordinary **tables**.                                                                                                    |
+
+<br>
+
+**Heap tuples** are **stacked** in order **from** the **bottom** of the page.<br>
+In the computer science, _this type of page_ is called a **slotted page**, and the **line pointers** correspond to a **slot array**.<br>
+
+<br>
+
+There are [**set of built-in functions**](https://www.postgresql.org/docs/current/pageinspect.html) to get low level info about pages.<br>
+For example, get **page_header**:
+```sql
+SELECT * FROM page_header(get_raw_page('pg_class', 0));
+```
+
+<br>
+
+### Page header
+The **page header** is defined by structure `PageHeaderData`:
+```c
+typedef struct PageHeaderData
+{
+	PageXLogRecPtr pd_lsn;		/* LSN: next byte after last byte of xlog
+								 * record for last change to this page */
+	uint16		pd_checksum;	/* checksum */
+	uint16		pd_flags;		/* flag bits, see below */
+	LocationIndex pd_lower;		/* offset to start of free space */
+	LocationIndex pd_upper;		/* offset to end of free space */
+	LocationIndex pd_special;	/* offset to start of special space */
+	uint16		pd_pagesize_version;
+	TransactionId pd_prune_xid; /* oldest prunable XID, or zero if none */
+	ItemIdData	pd_linp[FLEXIBLE_ARRAY_MEMBER]; /* line pointer array */
+} PageHeaderData;
+```
+
+The **page checksums** are _enabled_ through the parameter `--data-checksums` of the `initdb` command.<br>
+**By dfault** _page checksums_ are **disabled**. Checksums **cannot** be enabled on _working cluster_.<br>
+
+There is **configuration parameter** `data_checksums`:
+```sql
+example=# show data_checksums;
+ data_checksums
+----------------
+ off
+(1 row)
+```
+
+<br>
+
+### Line pointer (aka Item Id)
+The **line pointer** (aka **Item Id** or **lp**) is defined by structure `ItemIdData`:
+```c
+typedef struct ItemIdData
+{
+	unsigned	lp_off:15,		/* offset to tuple (from start of page) */
+				lp_flags:2,		/* state of line pointer, see below */
+				lp_len:15;		/* byte length of tuple */
+} ItemIdData;
+
+/*
+ * lp_flags has these possible states.  An UNUSED line pointer is available
+ * for immediate re-use, the other states are not.
+ */
+#define LP_UNUSED		0		/* unused (should always have lp_len=0) */
+#define LP_NORMAL		1		/* used (should always have lp_len>0) */
+#define LP_REDIRECT		2		/* HOT redirect (should have lp_len=0) */
+#define LP_DEAD			3		/* dead, may or may not have storage */
+```
+
+<br>
+
+A **line pointer** (aka **ItemId** or **lp**) holds **pointer to heap tuple**.<br>
+The **line pointers** within each _page_ are **numered sequentially** from **1**.<br>
+The **line pointer number** (aka **offset number**) serves as an **index** in the **array** of line pointers.<br>
+
+<br>
+
+### Heap tuple
+Every **heap tuple** (aka **item** or **row** or just **tuple** or **record**) has **tuple header** which is defined by structure `HeapTupleHeaderData`:
+```c
+typedef struct HeapTupleFields
+{
+	TransactionId t_xmin;		/* inserting xact ID */
+	TransactionId t_xmax;		/* deleting or locking xact ID */
+	union
+	{
+		CommandId	t_cid;		/* inserting or deleting command ID, or both */
+		TransactionId t_xvac;	/* old-style VACUUM FULL xact ID */
+	}			t_field3;
+} HeapTupleFields;
+
+typedef struct DatumTupleFields
+{
+	int32		datum_len_;		/* varlena header (do not touch directly!) */
+	int32		datum_typmod;	/* -1, or identifier of a record type */
+	Oid			datum_typeid;	/* composite type OID, or RECORDOID */
+} DatumTupleFields;
+
+struct HeapTupleHeaderData
+{
+	union
+	{
+		HeapTupleFields t_heap;
+		DatumTupleFields t_datum;
+	}			t_choice;
+
+	ItemPointerData t_ctid;		/* current TID of this or newer tuple (or a speculative insertion token) */
+	/* Fields below here must match MinimalTupleData! */
+	uint16		t_infomask2;	/* number of attributes + various flags */
+	uint16		t_infomask;		/* various flag bits, see below */
+	uint8		t_hoff;			/* sizeof header incl. bitmap, padding */
+	/* ^ - 23 bytes - ^ */
+	bits8		t_bits[FLEXIBLE_ARRAY_MEMBER];	/* bitmap of NULLs */
+	/* MORE DATA FOLLOWS AT END OF STRUCT */
+};
+```
+
+Some fields:
+- `t_xmin` holds the `txid` of the transaction that **inserted** _this tuple_;
+- `t_xmax` holds the `txid` of the transaction that **deleted** or **updated** _this tuple_;
+- `t_cid` holds the `cid` (**command id**), which is the **number of SQL command** that were executed **before** _this command_ was executed within the current transaction, **starting from 0**;
+  - example: assume that we execute **3** `INSERT` commands within a single transaction: `BEGIN; INSERT; INSERT; INSERT; COMMIT;`;
+    - if the **first** command inserts _this tuple_, `t_cid` is set to **0**
+    - Ii the **second** command inserts _this tuple_, `t_cid` is set to **1**, and so on;
+- `t_ctid` is used by **HOT mechanism** and holds the `tid` (**tuple identifier**) that points to `ItemId` of _this tuple_ or _new version of tuple_;
+
+<br>
+
+**Interpreting** the **actual data of tuple** can only be done with information obtained from other tables, mostly `pg_attribute`.<br>
+
+<br>
+
+## TID
+A **TID** stands for **tuple ID** (aka **Item Pointer**).<br>
+A **value** of **TID** is a **pair** `(page number, offset number)`, that identifies the header of **tuple**.<br>
+A **TID** is also a **type of** a system column **ctid**.<br>
+TIDs are used in indexes: indexes **don't** point to tuples directly, **indexes point to line pointer**.<br>
+This **layer of indirection** allows to **reorder tuples inside page** during `VACUUM`: tuples are reordered on a page, but **TIDs** are **still valid** because they **point to line pointers**.<br>
+The `VACUUM` deletes **dead tuple** and can reorder remaining tuples on the page to optimize space. But tuples **can only be deleted** when there are **no** active transactions that anc see them.<br> 
+
+<br>
+
+To obtain **TID** value for records add `ctid` to field list of `SELECT`:
+```sql
+example=# SELECT ctid, * FROM y;
+ctid  | a
+-------+---
+ (0,1) | 1
+(1 row)
+```
+
+<br>
+
+# HOT mechanism
+**HOT** stands for **Heap Only Tuples**. _HOT_ **avoids to update index** for cases when **indexed attribute** of row was not changed. This is reached through **HOT chains**.<br>
+But HOT has restriction - the **whole HOT chain must** be presented in **one** page and **cannot** be split through pages.<br>
+
+<br>
+
+# Index access method
+Indexes actually match a **key value** (such as the **value of the index column**) with the **TID** of tuple _containing the key value_.<br>
+Each **index access method** (aka **index types**) is described by a row in the `pg_am` system catalog.<br>
+The `pg_am` entry specifies a **name** and a **handler function** for the **index access method**.<br>
+
+<br>
+
+Postgresql provides several **built-in index access methods**:
+```sql
+example=# SELECT * FROM pg_am;
+ oid  | amname |      amhandler       | amtype
+------+--------+----------------------+--------
+    2 | heap   | heap_tableam_handler | t
+  403 | btree  | bthandler            | i
+  405 | hash   | hashhandler          | i
+  783 | gist   | gisthandler          | i
+ 2742 | gin    | ginhandler           | i
+ 4000 | spgist | spghandler           | i
+ 3580 | brin   | brinhandler          | i
+(7 rows)
+
+example=#
+```
+
+<br>
+
+Postgres allows adding **new index** types by creating **extensions**.<br>
+
+
+The **index access method** is responsible for:
+- how data is **organized** in an index;
+- how **queries** can access it;
+- how to **build execution plan**;
+- how operations like **insertions**, **deletions**, and **updates** are performed on the index;
+
+<br>
+
+Each **index access method** must implement **access method API**. The **access method API** provides the **set of routines** that define the **behavior** of a particular index type.<br>
+Note, in PostgreSQL, the term **routine** refers to functions or procedures that are part of an interface or API.<br>
+The **access method API** is represented by the struct `IndexAmRoutine`.<br> 
+A structure called `IndexAMRoutine` holds pointers to the functions that **manage index operations** for that specific **index type**, i.e. which **do all of the real work**.<br>
+The **core code** just calls appropriate functions and reads appropriate properties on instances of `IndexAmRoutine`.<br>
+
+So, each **index access method** is an instance of `IndexAMRoutine` struct.<br> 
+
+The **access method API** includes following groups of routines:
+- **index creation**: function to **create** index, core code **doesn't** know how to **create** index, it only knows which **method** to **call**;
+- **index scanning**: functions to **scan** the index and **identify relevant tuples** that satisfy the query conditions;
+- **insertion**, **deletion**, and **updates**: functions to **insert**, **delete** and **update** tuples; 
+  - for instance, in a **B-tree** index, new entries are inserted in sorted order, while a **GIN** index stores data as key-value pairs;
+- **index rebuilding** and **vacuuming**: routines for rebuilding and vacuuming indexes, these processes optimize storage and ensure the index remains efficient;
+- **query planning** and **index selection**;
+
+<br>
+
+For each table in the query, the **planner** looks for indexes that could optimize execution, because there can be columns for which indexes are created.<br>
+The **planner** then **evaluates the cost** of using each available index to access the data.<br>
+
+**Types of scanning**:
+- **sequential scans** if **no** appropriate index is found; 
+- **bitmap scans** if **multiple indexes** might be used together for filtering;
+- **index scans** if a **single index** provides the best cost;
+
+In index scans postgresql obtains TIDs through reading index, and then reads tuples using the obtained TIDs.<br>
+
+<br>
+
+## Operator class
+The routines for an _index access method_ **don't** directly know anything about the _data types_ that the _index access method_ will operate on.<br>
+To be useful, an _index access method_ must also have **one** or **more operator families** and **operator classes**.<br>
+So the **index logic** is partially implemented by the **access method API** and some of the **index logic** is also implemented by the **operator class**.<br>
+
+The **operator classes** define how _access method_ can handle a **particular data type** in **WHERE-clause operators**.<br>
+The **same** _data type_ can be used by **multiple** _operator classes_.<br>
+The **same** _operator class_ can be used by **multiple** _index access methods_.<br>
+
+<br>
+
+![mapping-am-opclass-dt](/img/mapping-am-opclass-dt.jpg)
+
+<br>
+
+An **index definition** can specify an **operator class** for each column of an index:
+```sql
+CREATE INDEX name ON table (column opclass [ ( opclass_options ) ] [sort options] [, ...]);
+```
+
+<br>
+
+Consider example:
+- the `GIST` is the _index access method_;
+- the `inet_ops` is an **operator class**;
+- for data types `cidr` and `inet` **two** `GIST`'s **operator classes** are provided:
+  - the **operator class** `gist_cidr_ops`, it is the **default** opclass;
+  - the **operator class** `inet_ops`;
+  - for historical reasons, the `inet_ops` operator class is **not** the default class for types `inet` and `cidr`;
+- to use `inet_ops` set it explicitly in **index definition**:
+```sql
+CREATE INDEX ON my_table USING GIST (some_column inet_ops);
+```
+
+<br>
+
+**Operator classes** are stored in the `pg_opclass` system table. Based on the **oid** in `pg_am`, you can see the various **operators** corresponding to **operator classes** and **operator families** for each **access method**.<br>
+
+<br>
+
+This query shows all defined **operator classes**, their **applicable data types** and **operator family** for each **access method**:
+```sql
+SELECT am.amname AS index_method,
+       opc.opcname AS opclass_name,
+       opf.opfname AS opfamily_name,
+       opc.opcintype::regtype AS indexed_type,
+       opc.opcdefault AS is_default
+    FROM pg_am AS am, pg_opclass AS opc, pg_opfamily AS opf
+    WHERE opc.opcmethod = am.oid AND
+          opc.opcfamily = opf.oid
+    ORDER BY index_method, opclass_name;
+
+index_method  |         opclass_name         |       opfamily_name       |        indexed_type         | is_default
+--------------+------------------------------+---------------------------+-----------------------------+------------
+ btree        | array_ops                    | array_ops                 | anyarray                    | t
+ btree        | bit_ops                      | bit_ops                   | bit                         | t
+ btree        | bool_ops                     | bool_ops                  | boolean                     | t
+ btree        | bpchar_ops                   | bpchar_ops                | character                   | t
+ btree        | bpchar_pattern_ops           | bpchar_pattern_ops        | character                   | f
+ btree        | bytea_ops                    | bytea_ops                 | bytea                       | t
+ btree        | char_ops                     | char_ops                  | "char"                      | t
+ btree        | cidr_ops                     | network_ops               | inet                        | f
+ btree        | date_ops                     | datetime_ops              | date                        | t
+ btree        | enum_ops                     | enum_ops                  | anyenum                     | t
+ btree        | float4_ops                   | float_ops                 | real                        | t
+ btree        | float8_ops                   | float_ops                 | double precision            | t
+ btree        | inet_ops                     | network_ops               | inet                        | t
+ btree        | int2_ops                     | integer_ops               | smallint                    | t
+ btree        | int4_ops                     | integer_ops               | integer                     | t
+ btree        | int8_ops                     | integer_ops               | bigint                      | t
+....
+```
+
+<br>
+
+This query shows **all** defined operator families and **all** the operators included in **each** family:
+```sql
+SELECT am.amname AS index_method,
+       opf.opfname AS opfamily_name,
+       amop.amopopr::regoperator AS opfamily_operator
+FROM pg_am am, pg_opfamily opf, pg_amop amop
+WHERE opf.opfmethod = am.oid AND
+  amop.amopfamily = opf.oid
+ORDER BY index_method, opfamily_name, opfamily_operator;
+index_method |       opfamily_name       |                      opfamily_operator
+--------------+---------------------------+--------------------------------------------------------------
+ btree        | integer_ops               | =(integer,bigint)
+ btree        | integer_ops               | <(integer,bigint)
+ btree        | integer_ops               | >(integer,bigint)
+ btree        | integer_ops               | <=(integer,bigint)
+ btree        | integer_ops               | >=(integer,bigint)
+ btree        | integer_ops               | =(smallint,smallint)
+ btree        | integer_ops               | <(smallint,smallint)
+ btree        | integer_ops               | =(integer,integer)
+ btree        | integer_ops               | <(integer,integer)
+ btree        | integer_ops               | =(bigint,bigint)
+ btree        | integer_ops               | <(bigint,bigint)
+ btree        | integer_ops               | >(bigint,bigint)
+ btree        | integer_ops               | <=(bigint,bigint)
+ btree        | integer_ops               | >=(bigint,bigint)
+ btree        | integer_ops               | =(bigint,integer)
+ btree        | integer_ops               | <(bigint,integer)
+ btree        | integer_ops               | >(bigint,integer)
+ btree        | integer_ops               | <=(bigint,integer)
+...
+```
+
+<br>
+
+The `psql` provides commands that shows **operator classes** and **operator families**:
+|Command|Description|
+|:------|:----------|
+|`\dAc`|List of **operator classes** for each **access method**|
+|`\dAf`|List of **operator families** for each **access method**|
+|`\dAo`|List of **operators** of **operator families**|
+
+<br>
+
+# TOAST
+Postgresql **doesn't** allow tuples to span multiple pages and whole tuple must be resided in one page.<br>
+To overcome this limitation for **large** tuples **TOAST** is used. TOAST work **transparently**: postgresql _TOASTs_ and _de-TOASTs_ values under the hood.<br>
+Only **certain** data types support TOAST and are called **TOAST-able** data types.<br>
+**TOAST-able** data types are such data types that can potentially have the large values.<br>
+If table contains at least one attribute of TOAST-able type then postgres creates associated **TOAST table** whose **OID** is stored in the `pg_class.reltoastrelid` of **owning table**.<br>
+**TOAST tables** are located in the schema `pg_toast` which is **not** in search path.<br>
+
+<br>
+
+**How TOAST works?**<br>
+The TOAST code is triggered only when a size of row ig greater than `TOAST_TUPLE_THRESHOLD` (by default, **1/4 of one page** or **2 KB**).<br>
+The TOAST code will **compress** and/or **move field values out-of-line** until the row value is shorter than `TOAST_TUPLE_TARGET` bytes (also normally 2 kB, adjustable) or no more gains can be had.<br>
+
+<br>
+
+**Values** of **TOAST-able types** are divided into **2 category**:
+- **out-of-line**: values stored **out-of-line** in a **TOAST table**;
+- **in-line**: values are stored **in-line** in **owning table**;
+
+The **compression** technique can be used for either **in-line** or **out-of-line** data.<br>
+
+<br>
+
+**Out-of-line values** are divided (after compression if used) into **chunks** of at most `TOAST_MAX_CHUNK_SIZE` bytes.
+**Each chunk** is stored as a **separate row** in the **TOAST table** belonging to the **owning table**.
+Every TOAST table has the columns
+- `chunk_id` (an OID identifying the particular **TOASTed value**);
+- `chunk_seq` (a **sequence number** of the **chunk**)
+- `chunk_data` (the **actual data** of the chunk);
+
+<br>
+
+A **unique index** on `chunk_id` and `chunk_seq` provides fast retrieval of the values.<br>
+
+<br>
+
+All values of **variable** data types have **varlena header**.<br>
+If tuple is moved to TOAST table the owning table stores **TOAST pointer** instead tuple data. **TOAST pointer** is a part of **varlena header**.<br>
+
+<br>
+
+There are exist **4** different **strategies** for **storing** TOAST-able columns on disk:
+- `PLAIN`: **doesn't use TOAST**, it is for columns of **non-TOAST-able** data types;
+- `EXTENDED`: allows both _compression_ and _out-of-line storage_;
+  - this is the **default** for most **TOAST-able** data types;
+  - compression will be attempted **first**, then _out-of-line storage_ if the row is still too big;
+- `EXTERNAL` allows **only** _out-of-line storage_ **without** _compression_;
+  - `EXTERNAL` is good for values that have **bad** compression ratio, e.g. **JPEG** images;
+  - `EXTERNAL` makes **substring operations** on long strings **faster**, because there is no need to decompress;
+  - `EXTERNAL` **saves CPU time** for unuseful attempts to compress data, but `EXTERNAL` has a **penalty** of **increased** storage space;
+- `MAIN` allows only _compression_ **without** _out-of-line storage_;
+  - **actually**, **out-of-line** storage will still be performed for such columns, but only as a **last resort** when there is no other way to make the row small enough to fit on a page;
+
+<br>
+
+Each **TOAST-able** data type has **default strategy**, which can be **altered** for a given table column:
+```sql
+ALTER TABLE xxx ALTER COLUMN yyy SET STORAGE { PLAIN | EXTERNAL | EXTENDED | MAIN | DEFAULT };
+```
+
+<br>
+
+The **default strategy** for each type can be figured out from the table `pg_type` by query:
+```sql
+SELECT DISTINCT typname, typstorage, typlen
+FROM pg_type
+ORDER BY typname;
+                typname                 | typstorage | typlen
+----------------------------------------+------------+--------
+ inet                                   | m          |     -1
+ int2                                   | p          |      2
+ int4                                   | p          |      4
+ int4range                              | x          |     -1
+ int8                                   | p          |      8
+ int8range                              | x          |     -1
+ json                                   | x          |     -1
+ jsonb                                  | x          |     -1
+ macaddr                                | p          |      6
+ money                                  | p          |      8
+ name                                   | p          |     64
+ numeric                                | m          |     -1
+```
+
+Values of **typstorage** field:
+- `p` = `plain`;
+- `e` = `external`;
+- `m` = `main`;
+- `x` = `extended`;
+
+<br>
+
+There are available 3 compression algorithms in postgresql:
+- `pglz`: postgresql's algorithm;
+- `lz4`: **faster** than `pglz`, to enable it the postgresql must be built with `–-with-lz4`;
+- `zstd`;
+
+<br>
+
+# Varlena
+All **variable length data types** have a **variable-length** (aka **varlena**) representation defined by struct `varatt_external`:
+```c
+typedef struct varatt_external
+{
+	int32		va_rawsize;		/* Original data size (includes header) */
+	uint32		va_extinfo;		/* External saved size (without header) and compression method */
+	Oid			va_valueid;		/* Unique ID of value within TOAST table */
+	Oid			va_toastrelid;	/* RelID of TOAST table containing it */
+}			varatt_external;
+```
+
+<br>
+
+The **first 4-byte word** `va_rawsize` of any stored value contains the **total length** of the value in bytes (**including** itself).<br>
+If variable data are stored **out-of-line** in a TOAST table then **varlena value** stores **TOAST pointer** instead value.<br>
+TOAST uses **two bits** of the **varlena length word** (the **high-order** bits on **big-endian** machines, the **low-order** bits on **little-endian** machines), thereby limiting the logical size of any value of a TOAST-able data type to **1 GB** (230 - 1 bytes).<br>
+
+<br>
+
+Bit layouts for varlena headers on **little-endian** machines:
+- `xxxxxx00` 4-byte length word, **aligned**, **UNcompressed** data (up to **1G**);
+- `xxxxxx10` 4-byte length word, **aligned**, **compressed** data (up to **1G**);
+- `00000001` 1-byte length word, **unaligned**, **TOAST pointer**;
+- `xxxxxxx1` 1-byte length word, **unaligned**, **UNcompressed** data (up to **126b**);
+
+<br>
+
+**Explanation**:
+- when **both bits are zero**, the value is an ordinary **un-TOASTed value** of the data type, and the remaining bits of the length word give the **total size** (**including** length word) in bytes;
+- when the **highest-order** or **lowest-order** bit is set, the value has only a **single-byte header** instead of the normal four-byte header, and the remaining bits of that byte give the **total size** (**including** length byte) in bytes, this supports space-efficient storage of values **shorter** than **127** bytes;
+- when the **highest-order** or **lowest-order** bit is set and all **remaining bits** of a **single-byte header** are **all** zero, the value is a TOAST pointer, i.e. pointer to out-of-line data;
+- when the **highest-order** or **lowest-order** bit is **clear** but the **adjacent bit is set**, the content of the value has been **compressed** and must be decompressed before use;
+  - compression is also possible **for out-of-line** data but the **varlena header** **does not** tell whether it has occurred — the content of the TOAST pointer tells that;

@@ -51,7 +51,7 @@ And the best thing you can do is to **simulate workloads** against different DBM
 <br>
 
 # Column vs. Row vs. Wide column oriented DBMS
-**Row oriented DBMSs** store data in **records** (aka **rows** or **tuples**).<br>
+**Row oriented DBMSs** store data in **records** (aka **rows** or **tuples** or **heap tuple**).<br>
 **Column oriented DBMSs** partition data **vertically** (**by column**), e.g. values for the same column are stored **contiguously**.<br>
 **Wide column oriented DBMSs** use hybrid layout: columns are grouped into **column families** and inside each column family data is stored in **rows**.<br>
 
