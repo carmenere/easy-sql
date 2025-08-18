@@ -64,6 +64,15 @@ The ANSI SQL **levels** and **anomalies**:
 
 <br>
 
+**All other anomalies** are also known as **serialization anomalies**.<br>
+**Serialization anomalies** arise when the result of execution of concurrent transactions depends on order in which transactions are commited.<br>
+Examples of serialization anomaly are
+- **write skew** anomaly;
+- **read skew** anomaly;
+- **lost update**;
+
+<br>
+
 # The concurrent anomalies
 ## P0: Dirty write
 **Scenario**:
@@ -196,9 +205,7 @@ Such a **write–write conflict** will cause the transaction to abort.<br>
 <br>
 
 In PostgreSQL, you can request any of the 4 standard transaction isolation levels, but internally **only three** distinct isolation levels are implemented.<br>
-
 **PostgreSQL's Read uncommitted** mode behaves like **Read committed**.<br>
-
 This is because it is the only sensible way to map the standard isolation levels to PostgreSQL's **multiversion concurrency control** architecture.
 
 <br>
