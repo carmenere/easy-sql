@@ -1,4 +1,6 @@
+# Table of contents
 <!-- TOC -->
+* [Table of contents](#table-of-contents)
 * [Data consistency](#data-consistency)
 * [The ANSI SQL isolation Levels](#the-ansi-sql-isolation-levels)
 * [The concurrent anomalies](#the-concurrent-anomalies)
