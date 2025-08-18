@@ -1,7 +1,7 @@
 # initdb
 `initdb` is used for creating a new PostgreSQL database cluster. `initdb` can also be invoked via `pg_ctl`.<br>
 
-`initdb` must be run as the user **that** will **own** the **server process**, because the server needs to have **access** to the **files** and **directories** that `initdb` creates.<br>
+`initdb` must be run under the user **that** will **own** the **server process**, because the server needs to have **access** to the **files** and **directories** that `initdb` creates.<br>
 
 `initdb` initializes the database cluster's **default locale** and **character set encoding**. These can also be set separately for each database when it is created.<br>
 `initdb` determines those settings for the `template` databases, which will serve as the **default** for **all** other databases.<br>
