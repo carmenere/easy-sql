@@ -95,7 +95,7 @@ The **same** _operator class_ can be used by **multiple** _index access methods_
 
 <br>
 
-![mapping-am-opclass-dt](/img/mapping-am-opclass-dt.jpg)
+![mapping-am-opclass-dt](/img/access_methods2opclass.png)
 
 <br>
 
