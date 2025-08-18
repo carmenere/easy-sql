@@ -33,7 +33,7 @@ Thus, data _consistency_ is **stricter** than _integrity_.<br>
 
 <br>
 
-**Transaction** is a **set of operation** that has the following **properties**:
+**Transaction** is a **set of operation** that has the following **properties** (aka **ACID**):
 - **C**onsistency: it transforms database from one **consistent** state to another **consistent** state;
 - **A**tomicity: **all operations** are executed as a **single unit** of work or rolled backed;
 - **I**solation: it **doesn't affect other transactions**;
@@ -61,8 +61,6 @@ The ANSI SQL **levels** and **anomalies**:
 |**Read committed**|**Not possible**|Possible|Possible| Possible            |
 |**Repeatable read**|**Not possible**|**Not possible**|Possible, but **not in PG**| Possible            |
 |**Serializable**|**Not possible**|**Not possible**|**Not possible**| **Not possible**    |
-
-Lost Update is allowed by Read Committed, but proscribed by Snapshot Isolation
 
 <br>
 
@@ -134,6 +132,8 @@ Actually P0 is fixed by all
 4. Then `T1` **writes** `y`, and `COMMIT`. 
 5. If there were a **constraint** between `x` and `y`, it might be **violated**, for example **overall sum**.
 
+<br>
+
 ### Write Skew: example
 1. Consider table of doctors and business **requirement** that **at least one** of doctor can be on call (on duty).
 2. Consider that there are 2 doctors that are is on duty:
@@ -186,13 +186,11 @@ A transaction executing under **snapshot isolation** appears to operate on a **p
 When the transaction concludes, it will successfully commit only if the values updated by the transaction have not been changed externally since the snapshot was taken.<br>
 Such a **write–write conflict** will cause the transaction to abort.<br>
 
+**Lost Update** is _allowed_ by _Read committed_, but **proscribed** by **Snapshot Isolation**.<br>
+
 <br>
 
 # Transaction isolation levels
-
-
-<br>
-
 **Serializable level** is the strongest isolation level. It guarantees that parallel execution of transactions behaves as if they get executed serially.<br>
 
 <br>
