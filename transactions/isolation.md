@@ -1,17 +1,180 @@
-# Read phenomena
-**Read phenomena** is an issue that can occur at concurrent reading and/or writing to the same row in table.<br>
-
-There are **4** read phenomena:
-|Read phenomena|Meaning|
-|:-------------|:------|
-|**Dirty read**|A transaction sees any **uncommitted** changes made by another concurrent transaction.|
-|**Non-repeatable read**|A transaction sees any **committed** changes made by another concurrent transaction, i.e., a transaction **re-reads** data it has previously read and finds that data has been **modified** by another committed concurrent transaction.|
-|**Phantom read**|A transaction **re-executes** a query returning a **set of rows** that satisfy some condition and finds that the result **set of rows** has **changed** due to another committed concurrent transaction.|
-|**Serialization anomaly**|When the **result** of parallel execution of transactions **depends on order** in which transactions are commited.<br>Example of **serialization anomaly** is **write skew anomaly**.|
+<!-- TOC -->
+* [Data consistency](#data-consistency)
+* [The ANSI SQL isolation Levels](#the-ansi-sql-isolation-levels)
+* [The concurrent anomalies](#the-concurrent-anomalies)
+  * [P0: Dirty write](#p0-dirty-write)
+  * [P1: Dirty read](#p1-dirty-read)
+  * [P2: Non-repeatable read or Fuzzy read](#p2-non-repeatable-read-or-fuzzy-read)
+  * [P3: Phantom read](#p3-phantom-read)
+  * [P4: Lost update](#p4-lost-update)
+  * [Read Skew](#read-skew)
+  * [Write Skew](#write-skew)
+    * [Write Skew: example](#write-skew-example)
+* [Snapshot isolation vs. Serializability](#snapshot-isolation-vs-serializability)
+* [Transaction isolation levels](#transaction-isolation-levels)
+* [Examples](#examples)
+  * [SET transaction isolation level for current session](#set-transaction-isolation-level-for-current-session)
+  * [SHOW transaction isolation level for current session](#show-transaction-isolation-level-for-current-session)
+    * [Current](#current)
+    * [Default](#default)
+  * [SET default transaction isolation level](#set-default-transaction-isolation-level)
+    * [Through postgresql.conf](#through-postgresqlconf)
+    * [Through ALTER DATABASE](#through-alter-database)
+<!-- TOC -->
 
 <br>
 
-**Phantom read** is a similar to **non-repeatable read**, but affects queries that search for **multiple** rows instead of one.<br>
+# Data consistency
+The _key feature_ of relational database is their ability to _ensure_ **data consistency** or **data correctness**.<br>
+At the database level it is possible to create **integrity constraints**, e.g. `UNIQUE`.<br>
+If all required constraints can be formulated at the database level, consistency would be guaranteed. But some conditions are too complex for that.<br>
+If app breaks consistency without breaking the integrity, there is no way for db to detect such violations.<br>
+Thus, data _consistency_ is **stricter** than _integrity_.<br>
+
+<br>
+
+**Transaction** is a **set of operation** that has the following **properties**:
+- **C**onsistency: it transforms database from one **consistent** state to another **consistent** state;
+- **A**tomicity: **all operations** are executed as a **single unit** of work or rolled backed;
+- **I**solation: it **doesn't affect other transactions**;
+- **D**urability: after crash, the system may still contain some changes made by uncommitted transactions and **the system must be able to restore data consistency after craches**;
+
+<br>
+
+# The ANSI SQL isolation Levels
+**Concurrent execution** of multiple correct **transactions** can lead to **several types of problems** (aka **concurrent phenomena**, **concurrent anomalies**, **read phenomena**) that violate the data consistency.<br>
+In other words, **concurrent anomalies** are issues that can occur at concurrent reading and writing to the same data item in db.<br>
+
+**Level of transaction isolation** defines the **degree** of how transaction can affect each other and how they can affect data consistency.<br>
+The **ANSI SQL** (aka **SQL-92**) standard defines **4 levels of transaction isolation** in terms of **3 concurrent anomalies** they prevent.<br>
+Every upper isolation level **fixes** some concurrent anomaly and **includes** all previous levels.<br>
+Why there are several levels? To choose the right **balance** between data **consistency** and **perfomance**.<br>
+Next level gives more consistency but decreases performance.<br>
+
+<br>
+
+The ANSI SQL **levels** and **anomalies**:
+
+|Isolation Level|Dirty Read|Nonrepeatable Read|Phantom Read| All other anomalies |
+|:--------------|:---------|:-----------------|:-----------|:--------------------|
+|**Read uncommitted**|Possible, but **not in PG**|Possible|Possible| Possible            |
+|**Read committed**|**Not possible**|Possible|Possible| Possible            |
+|**Repeatable read**|**Not possible**|**Not possible**|Possible, but **not in PG**| Possible            |
+|**Serializable**|**Not possible**|**Not possible**|**Not possible**| **Not possible**    |
+
+Lost Update is allowed by Read Committed, but proscribed by Snapshot Isolation
+
+<br>
+
+# The concurrent anomalies
+## P0: Dirty write
+**Scenario**:
+1. Transaction `T1` modifies a row.
+2. Another transaction `T2` then further **modifies** that row **before** `T1` performs a `COMMIT` or `ROLLBACK`.
+3. If `T1` or `T2` then performs a `ROLLBACK`, it is unclear what the correct data value should be.
+
+The ANSI SQL isolation should be modified to require P0 for all isolation levels.
+Actually P0 is fixed by all 
+
+<br>
+
+## P1: Dirty read
+**Scenario**:
+1. Transaction `T1` modifies a row.
+2. Another transaction `T2` then **reads** that row **before** `T1` performs a `COMMIT` or `ROLLBACK`.
+3. If `T1` then performs a `ROLLBACK`, `T2` has read a row that was never committed and so never really existed.
+
+<br>
+
+## P2: Non-repeatable read or Fuzzy read
+**Scenario**:
+1. Transaction `T1` reads a row.
+2. Another transaction `T2` then **modifies** or **deletes** that row and `COMMIT`.
+3. If `T1` then attempts to **reread** the row, it receives a **modified value** or discovers that the row has been **deleted**.
+
+<br>
+
+## P3: Phantom read
+**Scenario**:
+1. Transaction `T1` **reads** a **set of rows** satisfying some **search condition**.
+2. Transaction `T2` then **creates** rows that satisfy `T1`'s **search condition** and `COMMIT`.
+3. If `T1` then reads with the same **search condition**, it gets a **set of rows** different from the first read.
+
+<br>
+
+## P4: Lost update
+**Scenario**:
+1. Transaction `T1` **reads** a row.
+2. Transaction `T2` **reads** a row.
+2. Then `T2` **updates** the row and `COMMIT`.
+3. Then `T1` **updates** the row and `COMMIT`.
+4. The changes of `T1` cancel changes of `T2`, they become **lost**. 
+
+<br>
+
+## Read Skew
+**Scenario**:
+1. Transaction `T1` **reads** `x`.
+2. Transaction `T2` **updates** `x` and `y` to new values and `COMMIT`.
+3. Then `T1` reads `y` and it **doesn't** **re**read `x`, i.e. it holds **previous** value of `x`.
+4. As a result, `T1` may produce an **inconsistent state** as output: if there were a **constraint** between `x` and `y`, it might be **violated**, for example **overall sum**. 
+
+<br>
+
+> **Note**:
+> **Non-repeatable read** is a form of **Read skew** where `x` = `y`.<br>
+
+<br>
+
+## Write Skew
+**Scenario 1**:
+1. Transaction `T1` **reads** `x` and `y`. 
+2. Transaction `T2` **reads** `x` and `y`
+3. Then `T2` **writes** `x`, and `COMMIT`. 
+4. Then `T1` **writes** `y`, and `COMMIT`. 
+5. If there were a **constraint** between `x` and `y`, it might be **violated**, for example **overall sum**.
+
+### Write Skew: example
+1. Consider table of doctors and business **requirement** that **at least one** of doctor can be on call (on duty).
+2. Consider that there are 2 doctors that are is on duty:
+```sql
+example=# select * from doctors ;
+ name  | on_call
+-------+---------
+ Alice | t
+ Bob   | t
+(2 rows)
+```
+3. Consider they decide to cancel their shifts simultaneously.
+3.1. Alice transaction:
+```sql
+BEGIN TRANSACTION;
+DO $$ BEGIN
+  IF (SELECT COUNT(*) FROM doctors WHERE on_call = true) >= 1 THEN
+    UPDATE doctors SET on_call = false WHERE name = 'Alice';
+  END IF;
+END $$;
+COMMIT; 
+```
+3.2. Bob transaction:
+```sql
+BEGIN TRANSACTION;
+DO $$ BEGIN
+  IF (SELECT COUNT(*) FROM doctors WHERE on_call = true) >= 1 THEN
+    UPDATE doctors SET on_call = false WHERE name = 'Bob';
+  END IF;
+END $$;
+COMMIT; 
+```
+4. After both transaction has commited there are will **no doctor on duty** and **constraint will be violated**:
+```sql
+example=# select * from doctors ;
+ name  | on_call
+-------+---------
+ Bob   | f
+ Alice | f
+(2 rows)
+```
 
 <br>
 
@@ -26,17 +189,7 @@ Such a **write–write conflict** will cause the transaction to abort.<br>
 <br>
 
 # Transaction isolation levels
-There are **4** **transaction isolation levels**.<br>
-Every **isolation level** includes previous and **reduces** the particular type of **read phenomena**.<br>
 
-<br>
-
-|Isolation Level|Dirty Read|Nonrepeatable Read|Phantom Read|Serialization Anomaly|
-|:--------------|:---------|:-----------------|:-----------|:--------------------|
-|**Read uncommitted**|Possible <br>(not in PostgreSQL)|Possible|Possible|Possible|
-|**Read committed**|**Not possible**|Possible|Possible|Possible|
-|**Repeatable read**|**Not possible**|**Not possible**|Allowed, but not in PG|Possible|
-|**Serializable**|**Not possible**|**Not possible**|**Not possible**|**Not possible**|
 
 <br>
 
