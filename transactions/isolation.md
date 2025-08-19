@@ -47,7 +47,7 @@ Thus, data _consistency_ is **stricter** than _integrity_.<br>
 
 <br>
 
-# The ANSI SQL isolation Levels
+# The transaction isolation levels
 **Concurrent execution** of multiple _correct_ **transactions** can lead to **several types of problems** (aka **concurrent phenomena**, **concurrent anomalies**, **read phenomena** or just **phenomena**) that **violate** the _data consistency_.<br>
 In other words, **concurrent anomalies** are issues that can occur at **concurrent reading** and **writing** to the **same** data item in db.<br>
 
