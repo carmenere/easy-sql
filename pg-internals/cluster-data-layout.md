@@ -1,24 +1,24 @@
 # Table of contents
 <!-- TOC -->
-* [Table of contents](#table-of-contents)
-* [Cluster](#cluster)
-* [Data directory](#data-directory)
-  * [Layout of PGDATA](#layout-of-pgdata)
-* [System catalogs](#system-catalogs)
-* [OID](#oid)
-* [Another identifiers used internally](#another-identifiers-used-internally)
-* [Schemas](#schemas)
-* [Table spaces](#table-spaces)
-* [Forks](#forks)
-* [Pages](#pages)
-  * [Page layout](#page-layout)
-    * [Page header](#page-header)
-    * [Line pointer (aka Item Id)](#line-pointer-aka-item-id)
-    * [Heap tuple](#heap-tuple)
-  * [TID](#tid)
-* [HOT mechanism](#hot-mechanism)
-* [TOAST](#toast)
-* [Varlena](#varlena)
+- [Table of contents](#table-of-contents)
+- [Cluster](#cluster)
+- [Data directory](#data-directory)
+  - [Layout of PGDATA](#layout-of-pgdata)
+- [System catalogs](#system-catalogs)
+- [OID](#oid)
+- [Another identifiers used internally](#another-identifiers-used-internally)
+- [Schemas](#schemas)
+- [Table spaces](#table-spaces)
+- [Forks](#forks)
+- [Pages](#pages)
+  - [Page layout](#page-layout)
+    - [Page header](#page-header)
+    - [Line pointer (aka Item Id)](#line-pointer-aka-item-id)
+    - [Heap tuple](#heap-tuple)
+  - [TID](#tid)
+- [HOT mechanism](#hot-mechanism)
+- [TOAST](#toast)
+- [Varlena](#varlena)
 <!-- TOC -->
 
 <br>
@@ -291,10 +291,10 @@ drwx------  300 an.romanov  staff   9.4K Jul 15 18:55 101434
 # Forks
 Every _table_ and _index_ is represented with **several type of forks**.<br>
 Each **type of fork** holds a **specific type of data** for a _table_ or _index_:
-- **main** fork holds the **actual data** for a _table_ or _index_;
-- **free space map** (aka **fsm**) fork stores information about **free space** available in a _table_ or _index_;
-- (for _tables only_) **visibility map** (aka **vm**) fork tracks pages that don't have dead tuples;
-- (for **unlogged**  _tables_ and _their indexes_) **initialization** (aka **init**) fork;
+- **main** *fork* holds the **actual data** for a _table_ or _index_;
+- **free space map** (aka **fsm**) *fork* stores information about **free space** available in a _table_ or _index_;
+- (for _tables only_) **visibility map** (aka **vm**) *fork* tracks pages that **don't have** *dead tuples* and that **contains only** *frozen tuples*;
+- (for **unlogged**  _tables_ and _their indexes_) **initialization** (aka **init**) *fork*;
   - to create **unlogged** table use `CREATE UNLOGGED TABLE`;
   - actions with **unlogged** table are **not** written to **WAL**;
 

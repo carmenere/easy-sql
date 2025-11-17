@@ -1,8 +1,8 @@
 # Table of contents
 <!-- TOC -->
-* [Table of contents](#table-of-contents)
-* [BST](#bst)
-* [B-trees](#b-trees)
+- [Table of contents](#table-of-contents)
+- [BST](#bst)
+- [B-trees](#b-trees)
 <!-- TOC -->
 
 <br>
