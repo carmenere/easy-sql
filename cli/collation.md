@@ -1,10 +1,10 @@
 # Locale
 A **locale** is a **set of language and cultural rules**.<br>
-A name of locale consists of **language code**_**COUNTRY CODE**.
+A name of locale has a format: **language code**_**COUNTRY CODE**.<br>
 For example, the locale `zh_CN` has two parts: `zh` is the **language code**, and `CN` is the **country code**.<br>
 
 The `locale` command, when called **without argument** gives a summary of the current settings.<br>
-There are **different categories** for locale information a program might need, **locale settings**.
+There are **different categories** for locale information a program might need, **locale settings**.<br>
 There are several **locale variables** for **locale settings**:
 - `LC_COLLATE` controls the **collation**;
 - `LC_CTYPE` determines
@@ -29,7 +29,7 @@ In the **C locale**:
 <br>
 
 # Collation
-**Collation** is a **set of rules** used for **sorting** and **comparison properties**. 
+**Collation** is a **set of rules** used for **sorting** and **comparison properties**.<br>
 
 Usually **code point values** are **used** as a **default collation** - `A` with code point `65` is **before** `a` with code point `97`.<br>
 **Sort algorithm** using **different** collations can produce **different** result for the **same** input strings.<br>
@@ -60,6 +60,7 @@ ad
 ae
 ```
 
+<br>
 <br>
 
 **Example 2**: What is correct?
