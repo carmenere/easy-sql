@@ -1,8 +1,8 @@
 # Table of contents
 <!-- TOC -->
-* [Table of contents](#table-of-contents)
-* [Index access method](#index-access-method)
-  * [Operator class](#operator-class)
+- [Table of contents](#table-of-contents)
+- [Index access method](#index-access-method)
+  - [Operator class](#operator-class)
 <!-- TOC -->
 
 <br>
