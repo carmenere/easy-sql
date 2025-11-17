@@ -283,6 +283,6 @@ So, if **xmin horizon** is held by a **long-running** transaction, VACUUM can
 
 # Visibility map
 The **visibility map** can quickly show whether a page needs to be vacuumed or frozen. For this purpose, it provides **two bits** for each table page.<br>
-The **first bit** is set for pages that contain **only up-to-date row versions**, in other words there are **no dead tuples** on page. Vacuum **skips** such pages because there is nothing to clean up.<br>
+The **first bit** (called **all-visible**) is set for pages that contain **only up-to-date row versions**, in other words there are **no dead tuples** on page. Vacuum **skips** such pages because there is nothing to clean up.<br>
 Besides, when a transaction tries to read a row from such a page, there is **no need to check its visibility**, so an **index-only scan can be used**.<br>
-The **second bit** is set for pages that contain **only frozen row versions**. Vacuum **skips** such pages even for preventing XID wraparound.<br>
+The **second bit** (called **all-frozen**) is set for pages that contain **only frozen row versions**. Vacuum **skips** such pages even for preventing XID wraparound.<br>
