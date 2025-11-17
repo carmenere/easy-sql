@@ -120,7 +120,7 @@ CREATE EXTENSION IF NOT EXISTS pageinspect;
 CREATE TABLE foo (id serial, name text);
 
 INSERT INTO foo VALUES (1, 'a');
-INSERT INTO foo VALUES (2, 'a');
+INSERT INTO foo VALUES (2, 'b');
 
 SELECT lp, t_ctid, t_xmin, t_xmax FROM heap_page_items(get_raw_page('foo', 0));
  lp | t_ctid | t_xmin | t_xmax
@@ -144,10 +144,10 @@ SELECT lp, t_ctid, t_xmin, t_xmax FROM heap_page_items(get_raw_page('foo', 0));
 
 # CLOG and hint bits
 **Every** transaction knows its **XID** and **isolation level**.<br>
-To determine is a particular tuple **visible** or **not** in the current transaction, the current transaction must figure out states of transactions **t_xmin** **и t_xmax** of this tuple.<br>
+To determine is a particular tuple **visible** or **not** in the current transaction, the current transaction must figure out states of 2 transactions: **t_xmin** and **t_xmax**.<br>
 The **status** of any transaction can be found out by **its ID** using **ProcArray** and **CLOG**.<br>
-The **ProcArray** is a special runtime structure that contains information about all processes, if process is associated with **t_xmin** of tuple it means that this **transaction ID** (**xmin**) is still active.<br>
-The **commit Log** (**CLOG**) is a **bit map** that stores the states of each transaction. *CLOG* uses **2 bits** to store state of transaction.<br>
+The **ProcArray** is a special runtime structure that contains information about all processes, so if **ProcArray** contains process with **t_xmin** it means that this transaction ID (**t_xmin**) is **still active**.<br>
+The **commit Log** (**CLOG**) is a **bit map** that stores states of transactions. The *CLOG* uses **2 bits** to store state of transaction.<br>
 
 So, **2 bits** give **4 states of transaction**:
 - `TRANSACTION_STATUS_IN_PROGRESS`
@@ -157,18 +157,21 @@ So, **2 bits** give **4 states of transaction**:
 
 <br>
 
-The **CLOG** can be flushed to disk, so it is expensive operation to visit *CLOG*, because sometimes it can require access to disk.<br>
+The **CLOG** can be flushed to disk, so it is **expensive** operation to visit *CLOG*, because sometimes it can require access to disk.<br>
 **Hint bit** are used **to optimize the discovering** states of **t_xmin** **и t_xmax** transactions.<br>
 **Hint bits** store state of **t_xmin** **и t_xmax** transactions **directly in tuple** itself.<br>
 **Hint bits** store all necessary information about status of **t_xmin** **и t_xmax** transactions, but they **can only be set by another transaction**, because original transaction **doesn't** know how it will be finished and cannot set *hint bits* untill it is completed.
 
 <br>
 
-There are **four hint bits** in `t_infomask` field for possible **4 situatuins**:
-- `HEAP_XMIN_COMMITTED`: 0x0**1**00 = 0000000**1**00000000
-- `HEAP_XMIN_INVALID`:   0x0**2**00 = 000000**1**000000000 
-- `HEAP_XMAX_COMMITTED`: 0x0**4**00 = 00000**1**0000000000
-- `HEAP_XMAX_INVALID`:   0x0**8**00 = 0000**1**00000000000
+There are **four hint bits** in `t_infomask` field for possible **4 situations**:
+
+|Name of bit|Hex|Binary|
+|:----------|:--|:-----|
+|`HEAP_XMIN_COMMITTED`|0x0**1**00|0000000**1**00000000|
+|`HEAP_XMIN_INVALID`|0x0**2**00|000000**1**000000000 |
+|`HEAP_XMAX_COMMITTED`|0x0**4**00|00000**1**0000000000|
+|`HEAP_XMAX_INVALID`|0x0**8**00|0000**1**00000000000|
 
 <br>
 
