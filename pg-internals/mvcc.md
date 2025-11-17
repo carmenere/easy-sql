@@ -1,3 +1,18 @@
+# Table of contents
+<!-- TOC -->
+- [Table of contents](#table-of-contents)
+- [OCC vs. PCC](#occ-vs-pcc)
+- [SI. SSI. MVCC](#si-ssi-mvcc)
+- [Versions of tuples](#versions-of-tuples)
+- [CLOG and hint bits](#clog-and-hint-bits)
+- [Snapshots](#snapshots)
+- [Dead tuples vs. Frozen tuples](#dead-tuples-vs-frozen-tuples)
+- [Horizon](#horizon)
+- [Visibility map](#visibility-map)
+<!-- TOC -->
+
+<br>
+
 # OCC vs. PCC
 **Resource contention** (**concurrent access**) is a situation when two or more processes/threads **try to access** to the **same resources simultaneously**.<br>
 For example, **lock contention** occurs when multiple processes/threads are trying to **acquire the same lock simultaneously**, but **only one can succeed at a time**.<br>
