@@ -127,7 +127,7 @@ Example of collations in PG:
 - **C** collation
   - handled by **postgresql internal provider**
   - produces **predictable** and **deteministic** results **across** postgres instances;
-- **en_us.UTF-8** collation
+- **en_US.UTF-8** collation
   - handled by **glibc**
   - produces **non-deteministic** results **across** postgres instances, because depends on OS locale settings;
 
