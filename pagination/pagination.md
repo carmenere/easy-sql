@@ -21,7 +21,7 @@ SELECT * FROM test_table JOIN (SELECT id FROM test_table ORDER BY id LIMIT 10000
 <br>
 
 `LIMIT` is worked **after** rows were retrieved, so `SELECT id FROM test_table ORDER BY id LIMIT 100000, 30` retrieves rows using index, because there is **specific** indexed column.<br>
-So, it is knows where row with ordinal number `100000` is.
+So, it knows where row with ordinal number `100000` is.
 
 `SELECT * FROM test_table ORDER BY id LIMIT 100000, 30` **doesn't** use index, because there are **all** columns. So, it is **doesn't** know where row with ordinal number `100000` is and return whole table.
 
