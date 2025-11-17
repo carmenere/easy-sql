@@ -31,4 +31,4 @@ So, there are 2 types of indexes:
 - The **clustered index** is always **primary index**.
 - The **non clustered index** is always **secondary index**.
 
-The **secondary index** have a structure that is **separated** from the data rows and contains **sorted tuples**: `(value [of indexed column], pointer [to the row])`.
+The **secondary index** has a structure that is **separated** from the data rows and contains **sorted tuples**: `(value [of indexed column], pointer [to the row])`.
