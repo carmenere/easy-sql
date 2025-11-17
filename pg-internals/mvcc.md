@@ -88,12 +88,12 @@ Both **SI** and **SSI** uses **MVCC** to provide snapshot isolation, in other wo
 # Versions of tuples
 An acronym **XID** means **transaction ID** (also abbreviated **xact**).<br>
 
-**Note** that `BEGIN` command **doesn't** assign a **XID**. In PostgreSQL, when the first command is executed after a BEGIN command executed, a tixd is assigned by the transaction manager, and then the transaction starts.<br>
+**Note** that `BEGIN` command **doesn't** assign a **XID**. In PostgreSQL, when the **first command** is executed **after** a `BEGIN` command executed, a **xid** is assigned by the transaction manager, and then the transaction starts.<br>
 
 In PostgreSQL, **multiple versions** of a **row** (**tuple**) **may exist simultaneously**.<br>
 **Every tuple** has a **header** that contains **special fields** (**xmin**, **xmax** and **hint bits**) which help Postgres **manage** **row versions** and **visibility**:
-- `t_xmin` - the ID of transaction that **inserted** the row version;
-- `t_xmin` - the ID of transaction that **deleted** the row version;
+- `t_xmin` - the ID of transaction that **created** the row version;
+- `t_xmax` - the ID of transaction that **deleted** the row version;
 - `t_infomask` - **hint bits**, they are used to determine visible row or not in current transactoin;
 
 <br>
@@ -101,15 +101,15 @@ In PostgreSQL, **multiple versions** of a **row** (**tuple**) **may exist simult
 How SQL commands changes **xmin** and **xmax** of tuples:
 - `INSERT`:
   - **inserts new row**;
-  - fills the **xmin** field by **current XID**;
-  - fills the **xmax** field by **0**;
+  - fills the `t_xmin` field by **current XID**;
+  - fills the `t_xmax` field by **0**;
 - `DELETE`:
-  - **updates** the **xmax** field with **current XID** value, this row is now considered a **dead tuple**;
+  - **updates** the `t_xmax` field with **current XID** value, then row is considered a **dead tuple**;
 - `UPDATE` operates as a **combination** of a `DELETE` and an `INSERT`:
-  - **first**, **updates** the **xmax** of the **current row** with **current XID** value, this row is now considered a **dead tuple**;
+  - **first**, **updates** the `t_xmax` of the **current row** with **current XID** value, this row is now considered a **dead tuple**;
   - **then**, inserts **new row**:
-    - fills the **xmin** field by **current XID**;
-    - fills the **xmax** field by **0**;
+    - fills the `t_xmin` field by **current XID**;
+    - fills the `t_xmax` field by **0**;
 
 <br>
 
