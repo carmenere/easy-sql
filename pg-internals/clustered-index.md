@@ -5,7 +5,7 @@ Such tables are called **unclustered tables**.<br>
 
 <br>
 
-**Clustering** is the process of **physically reordering** a table's rows **based** on the **index** and such index became **clustered index**.<br>
+**Clustering** is the process of **physically reordering** a table's rows **based** on the **index** and such index becomes **clustered index**.<br>
 
 The is SQL command `CLUSTER` to **cluster** a table **according to an index**:
 ```sql
@@ -14,7 +14,7 @@ CLUSTER employees USING employees_ind;
 
 <br>
 
-After clustering **order** of tuples in **clustered index** and in the **table** is the **same**.<br>
+**After** clustering **order** of tuples in the table **becomes the same** as the **order** of tuples in **clustered index**.<br>
 When a table has a **clustered index**, the table is called a **clustered table**.<br>
 
 A **clustered table** is a table that **physically** stores the data rows on the disk in the **same order** as the key values in its **clustered index**.<br>
