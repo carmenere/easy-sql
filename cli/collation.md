@@ -146,3 +146,51 @@ The **subtags** are:
   - `kn`: if `true` it means **sequences of digits** will be **ordered numerically** rather than alphabetically (**natural ordering**);
   - ...
 
+<br>
+
+# Examples
+```sql
+foo=# SELECT * from unnest(
+   ARRAY(SELECT name COLLATE "C" FROM foo ORDER BY name),
+   ARRAY(SELECT name COLLATE "default" FROM foo ORDER BY name),
+   ARRAY(SELECT name COLLATE "POSIX" FROM foo ORDER BY name),
+   ARRAY(SELECT name COLLATE "en_US.UTF-8" FROM foo ORDER BY name)
+) AS data(C, "default", POSIX, "en_US.UTF-8")
+;
+     c     |  default  |   posix   | en_US.UTF-8
+-----------+-----------+-----------+-------------
+ 1a1       | 1a1       | 1a1       | 1a1
+ 1a2       | 1a2       | 1a2       | 1a2
+ 1b        | 1b        | 1b        | 1b
+ 1b1       | 1b1       | 1b1       | 1b1
+ 1b2       | 1b2       | 1b2       | 1b2
+ 1ba       | 1ba       | 1ba       | 1ba
+ 2a        | 2a        | 2a        | 2a
+ 2a1       | 2a1       | 2a1       | 2a1
+ 2a2       | 2a2       | 2a2       | 2a2
+ 2b1       | 2b1       | 2b1       | 2b1
+ 2b2       | 2b2       | 2b2       | 2b2
+ A_1.1.1.1 | a_1.1.1.1 | A_1.1.1.1 | a_1.1.1.1
+ A_2.2.2.2 | A_1.1.1.1 | A_2.2.2.2 | A_1.1.1.1
+ B_1.1.1.1 | a_2.2.2.2 | B_1.1.1.1 | a_2.2.2.2
+ B_2.2.2.2 | A_2.2.2.2 | B_2.2.2.2 | A_2.2.2.2
+ a1        | a1        | a1        | a1
+ a11       | a11       | a11       | a11
+ a12       | a12       | a12       | a12
+ a2        | a2        | a2        | a2
+ a22       | a22       | a22       | a22
+ a_1.1.1.1 | aaabc     | a_1.1.1.1 | aaabc
+ a_2.2.2.2 | aabb      | a_2.2.2.2 | aabb
+ aaabc     | aabbcc    | aaabc     | aabbcc
+ aabb      | ab        | aabb      | ab
+ aabbcc    | abc       | aabbcc    | abc
+ ab        | b_1.1.1.1 | ab        | b_1.1.1.1
+ abc       | B_1.1.1.1 | abc       | B_1.1.1.1
+ b_1.1.1.1 | b_2.2.2.2 | b_1.1.1.1 | b_2.2.2.2
+ b_2.2.2.2 | B_2.2.2.2 | b_2.2.2.2 | B_2.2.2.2
+ ba        | ba        | ba        | ba
+(30 rows)
+
+Time: 6.898 ms
+foo=#
+```
