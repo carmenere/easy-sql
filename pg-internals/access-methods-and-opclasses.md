@@ -1,9 +1,129 @@
 # Table of contents
 <!-- TOC -->
 - [Table of contents](#table-of-contents)
+- [Access methods](#access-methods)
+  - [The index only scan](#the-index-only-scan)
+  - [Indexes with the `INCLUDE` clause](#indexes-with-the-include-clause)
+  - [The bitmap index scan](#the-bitmap-index-scan)
+- [Table access methods](#table-access-methods)
 - [Index access method](#index-access-method)
   - [Operator class](#operator-class)
+  - [Index selection](#index-selection)
 <!-- TOC -->
+
+<br>
+
+# Access methods
+An **access method** characterizes the way used to **scan** tables and **retrieve** only those rows that meet the **selection criteria**.<br>
+There are 2 groups of **access methods**:
+- **heap** access methods - direct access to tables whithout using indexes:
+  - **sequential** scan (**seq scan**);
+- **index** access methods:
+  - **index** scan;
+  - **index only** scan (it is **optimization** of *index scan*);
+  - **bitmap index** scan (it is **optimization** of *index scan*);
+
+<br>
+
+The **index scans** obtains *TIDs* through reading index, and then reads tuples from pages of *table* (*heap*) using the obtained *TIDs*.<br>
+
+<br>
+
+For each table in the query, the **planner** looks for indexes that could optimize execution, because there can be columns for which indexes are created.<br>
+The planner evaluates the **cost** of each query plan and then chooses the **cheapest** plan.<br>
+For some queries **sequential scan** can be **cheaper** then **index scan**.<br>
+
+<br>
+
+**Cost of access** depends on both the **selectivity** of the query and the **correlation** between the **order** of tuples in the *table* and the **order** of *TIDs* in the *index*:
+
+<br>
+
+**Selectivity**:
+- **low selectivity** of the query means query returns **many** rows, for example, when there is **no** `WHERE` clause in query or when `WHERE` clause fetches a **wide** range of rows;
+- **high selectivity** of the query means query returns a **few** rows, for example, when the `WHERE` clause fetches a **narrow** range of rows;
+
+So,
+- **index scan** is good for **high selectivity**;
+- **seq scan** is good for **low selectivity**;
+
+<br>
+
+**Correlation**:
+- **high correlation**: if the **order** of tuples in the *table* has perfect correlation with the **order** of *TIDs* in the *index*, **each page will be accessed only once**: the **index scan** will sequentially go from one page to another, reading the tuples one by one;
+- **low correlation**: the **index** scan process has to **jump between pages randomly** instead of reading them sequentially; in the **worst-case scenario**, the number of page accesses can reach the number of fetched tuples, in toher words: **reading happens in a random fashion**;
+
+<br>
+
+So, the **efficiency of an index scan is limited**: as the *correlation* **decreases**, the *number of accesses to heap pages* **rises**, and **scanning** becomes **random** rather than sequential.
+
+For example, if the **correlation is low**, **index scanning** becomes **less attractive** for queries with **low selectivity**.<br>
+
+<br>
+
+## The index only scan
+The *index only scan* is an **optimization** of processing *TIDs*: if an index contains all the *heap* data required by the query **extra** *table* **access** can be **avoided** and instead of TIDs, the access method can return the **actual data** associated with TIDs directly.<br>
+
+The name suggests that *index only scan* never has to access the heap, **but it is not so**.<br>
+In PostgreSQL, indexes contain **no** information on tuple **visibility** , so the access method returns **all** the heap tuples that satisfy the filter condition, **even** if the current transaction **cannot** see them. Their **visibility** is then **checked** by the indexing engine.<br>
+
+The *index only scan* uses the **visibility map** provided for *heaps* (*tables*), in which the *vacuum process* marks the pages that contains only **all-visible** tuples (tuples that are accessible to all transactions, regardless of the snapshot used). If the *TIDs* returned by the index access method belongs to such a page, there is **no** need to check its visibility.<br>
+
+The **cost** estimation of an **index-only scan** depends on the number of **all-visible** pages in the heap.<br>
+The **index-only scan** is efficent for selecting data are **changed rarely**.<br>
+
+<br>
+
+## Indexes with the `INCLUDE` clause
+It is not always possible to extend an index with all the columns required by a query:
+• for a unique index, adding a new column **may break** the unique constraint;
+• the index access method **may not provide** an operator class for the data type of the column to be added;
+
+<br>
+
+But it is possible to **include columns into an index without making them a part of the index key**.<br>
+It will of course be impossible to perform an index scan based on the included columns.<br>
+
+```sql
+CREATE UNIQUE INDEX ON bookings(book_ref) INCLUDE (book_date);
+```
+
+<br>
+
+## The bitmap index scan
+The *bitmap index scan* is an **optimization** of processing *TIDs*: postgres fetches **all** the *TIDs* **before** accessing the *table* (*heap*) and **sort** them in ascending order based on their **page numbers**.
+
+Unlike a regular index scan, *bitmap index scan* is represented in the **query plan by 2 nodes**:
+- **bitmap index scan** gets the **bitmap** of **all** TIDs from the access method;
+- the **bitmap** consists of **separate segments**, each corresponding to a single heap page;
+- **bitmap heap scan** traverses the bitmap segment by segment and reads the corresponding pages **exactly once**;
+
+<br>
+
+Example of query plan nodes of *bitmap index scan*:
+```sql
+Bitmap Heap Scan on bookings (cost=54.63..7040.42 rows=2865 wid...
+    Recheck Cond: (total_amount = 48500.00)
+    −> Bitmap Index Scan on bookings_total_amount_idx
+        (cost=0.00..53.92 rows=2865 width=0)
+        Index Cond: (total_amount = 48500.00)
+```
+
+<br>
+
+# Table access methods
+A **tablea ccess method** is a **storage engines** for table.<br>
+The PostgreSQL you to create various table access methods, but there is only one available out of the box at the moment - **heap**:
+
+```sql
+SELECT amname, amhandler FROM pg_am WHERE amtype = 't';
+ amname |      amhandler
+--------+----------------------
+ heap   | heap_tableam_handler
+(1 row)
+```
+
+You can specify the **engine** to use when creating a table (`CREATE TABLE ... USING`).<br>
 
 <br>
 
@@ -69,18 +189,6 @@ The **access method API** includes following groups of routines:
     - for instance, in a **B-tree** index, new entries are inserted in sorted order, while a **GIN** index stores data as key-value pairs;
 - **index rebuilding** and **vacuuming**: routines for rebuilding and vacuuming indexes, these processes optimize storage and ensure the index remains efficient;
 - **query planning** and **index selection**;
-
-<br>
-
-For each table in the query, the **planner** looks for indexes that could optimize execution, because there can be columns for which indexes are created.<br>
-The **planner** then **evaluates the cost** of using each available index to access the data.<br>
-
-**Types of scanning**:
-- **sequential scans** if **no** appropriate index is found;
-- **bitmap scans** if **multiple indexes** might be used together for filtering;
-- **index scans** if a **single index** provides the best cost;
-
-In index scans postgresql obtains TIDs through reading index, and then reads tuples using the obtained TIDs.<br>
 
 <br>
 
@@ -199,5 +307,17 @@ The `psql` provides commands that shows **operator classes** and **operator fami
 |`\dAc`|List of **operator classes** for each **access method**|
 |`\dAf`|List of **operator families** for each **access method**|
 |`\dAo`|List of **operators** of **operator families**|
+
+<br>
+
+## Index selection
+1. Search **attrelid**, **attname**, **attnum** and **atttypid** in **pg_attribute** by *table* and *column name*.
+2. Search **oid of operator** by *operator name* and *its operand types*.
+3. Search **avaliable indexes** by *table* and *column*.
+4. Search **oid of operator family** (**opfamily**) in **pg_opclass** by operator class of appropriate indexes.
+5. Search **operators** supported by indexes in **pg_amop** by **oid of operator** and **oid of operator class**.
+6. **Select indexes** that **support appropriate operators** (found in **pg_amop**) **can be used**.
+
+![index_selection](/img/index_selection.png)
 
 <br>
