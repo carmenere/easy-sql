@@ -12,10 +12,10 @@
 
 # INCLUDE indexes
 It is not always possible to extend an index with all the columns required by a query:
-• for a unique index, adding a new column may break the unique constraint;
-• the index access method may not provide an operator class for the data type of the column to be added;
+- for a **unique index**, adding a new column may break the unique constraint;
+- the **index access method** may not provide an operator class for the data type of the column to be added;
 
-But it is possible to include columns into an index without making them a part of the index key. It will of course be impossible to perform an index scan based on the included
+But it is **possible** to **include columns into an index without making them a part of the index key**. It will of course be impossible to perform an index scan based on the included
 columns.
 
 ```sql
