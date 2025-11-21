@@ -3,7 +3,6 @@
 - [Table of contents](#table-of-contents)
 - [Access methods](#access-methods)
   - [The index only scan](#the-index-only-scan)
-  - [Indexes with the `INCLUDE` clause](#indexes-with-the-include-clause)
   - [The bitmap index scan](#the-bitmap-index-scan)
 - [Table access methods](#table-access-methods)
 - [Index access method](#index-access-method)
@@ -71,22 +70,6 @@ The *index only scan* uses the **visibility map** provided for *heaps* (*tables*
 
 The **cost** estimation of an **index-only scan** depends on the number of **all-visible** pages in the heap.<br>
 The **index-only scan** is efficent for selecting data are **changed rarely**.<br>
-
-<br>
-
-## Indexes with the `INCLUDE` clause
-It is not always possible to extend an index with all the columns required by a query:
-• for a unique index, adding a new column **may break** the unique constraint;
-• the index access method **may not provide** an operator class for the data type of the column to be added;
-
-<br>
-
-But it is possible to **include columns into an index without making them a part of the index key**.<br>
-It will of course be impossible to perform an index scan based on the included columns.<br>
-
-```sql
-CREATE UNIQUE INDEX ON bookings(book_ref) INCLUDE (book_date);
-```
 
 <br>
 
