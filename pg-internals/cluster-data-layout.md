@@ -292,11 +292,26 @@ drwx------  300 an.romanov  staff   9.4K Jul 15 18:55 101434
 Every _table_ and _index_ is represented with **several type of forks**.<br>
 Each **type of fork** holds a **specific type of data** for a _table_ or _index_:
 - **main** *fork* holds the **actual data** for a _table_ or _index_;
-- **free space map** (aka **fsm**) *fork* stores information about **free space** available in a _table_ or _index_;
-- (for _tables only_) **visibility map** (aka **vm**) *fork* tracks pages that **don't have** *dead tuples* and that **contains only** *frozen tuples*;
-- (for **unlogged**  _tables_ and _their indexes_) **initialization** (aka **init**) *fork*;
+- **free space map** *fork* (aka **fsm** *fork*) stores information about **free space** available in a _table_ or _index_;
+- **visibility map** *fork* (aka **vm** *fork*) tracks pages that **don't have** *dead tuples* and that **contains only** *frozen tuples*;
+  - the **vm** *fork* is provided for *tables*, but **not** for *indexes*;
+  - the *vacuum process* marks the pages in the **vm**;
+- **initialization** *fork* (aka **init** *fork*);
+  - the **init** *fork* is provided for **unlogged**  _tables_ and _their indexes_;
   - to create **unlogged** table use `CREATE UNLOGGED TABLE`;
   - actions with **unlogged** table are **not** written to **WAL**;
+
+<br>
+
+The **visibility map** is a **bitmap** that for each table page stores **two bits**:
+  - the **first bit** (aka **all-visible**) is set by the *vacuum process* for pages that contain only **all-visible** tuples, in other words tuples that are accessible to **all** transactions, regardless of the snapshot used;
+  - the **second bit** (aka **all-frozen**) is set by the *vacuum process* for pages that contain only **all-frozen** tuples, in other words **xmin** of such tuples can be reused as transaction id;
+
+<br>
+
+The *vacuum process* **skips pages** for which **all-visible** bit is **set**, because there is nothing to clean up.<br>
+Besides, when a transaction tries to read a row from such a page, there is no point in checking its visibility, so an **index-only scan** can be used.<br>
+
 
 <br>
 

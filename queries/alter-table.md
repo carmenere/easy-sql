@@ -1,3 +1,26 @@
+# Table of contents
+<!-- TOC -->
+- [Table of contents](#table-of-contents)
+- [ALTER TABLE](#alter-table)
+  - [ADD COLUMN](#add-column)
+  - [DROP COLUMN](#drop-column)
+  - [ADD CONSTRAINT](#add-constraint)
+    - [UNIQUE](#unique)
+    - [CHECK](#check)
+    - [FOREIGN KEY](#foreign-key)
+  - [RENAME CONSTRAINT](#rename-constraint)
+  - [DROP CONSTRAINT](#drop-constraint)
+  - [ADD PRIMARY KEY](#add-primary-key)
+  - [ALTER COLUMN](#alter-column)
+    - [SET NOT NULL](#set-not-null)
+    - [DROP NOT NULL](#drop-not-null)
+    - [DROP DEFAULT](#drop-default)
+    - [Change type of column](#change-type-of-column)
+- [ADD CONSTRAINT ... PRIMARY KEY USING INDEX ...](#add-constraint--primary-key-using-index-)
+<!-- TOC -->
+
+<br>
+
 # ALTER TABLE
 ## ADD COLUMN
 ```sql
@@ -227,4 +250,27 @@ ALTER TABLE ONLY fw_icmp_messages
             WHEN type = 14 AND code = 0  THEN 'timestamp_reply'::icmp_codes_t
             ELSE NULL
         END;
+```
+
+<br>
+
+# ADD CONSTRAINT ... PRIMARY KEY USING INDEX ...
+How to replace an automatically created primary key index by another index with an included column.<br>
+
+```sql
+CREATE UNIQUE INDEX ON bookings(book_ref) INCLUDE (book_date);
+
+BEGIN;
+
+ALTER TABLE bookings
+    DROP CONSTRAINT bookings_pkey CASCADE;
+
+ALTER TABLE bookings
+    ADD CONSTRAINT bookings_pkey PRIMARY KEY
+    USING INDEX bookings_book_ref_book_date_idx; -- a new index
+
+ALTER TABLE tickets
+    ADD FOREIGN KEY (book_ref) REFERENCES bookings(book_ref);
+
+COMMIT;
 ```
