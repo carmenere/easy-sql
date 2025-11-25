@@ -1,28 +1,210 @@
 # Table of contents
 <!-- TOC -->
 - [Table of contents](#table-of-contents)
-- [ALTER TABLE](#alter-table)
-  - [ADD COLUMN](#add-column)
-  - [DROP COLUMN](#drop-column)
-  - [ADD CONSTRAINT](#add-constraint)
-    - [UNIQUE](#unique)
-    - [CHECK](#check)
-    - [FOREIGN KEY](#foreign-key)
-  - [RENAME CONSTRAINT](#rename-constraint)
-  - [DROP CONSTRAINT](#drop-constraint)
-  - [ADD PRIMARY KEY](#add-primary-key)
-  - [ALTER COLUMN](#alter-column)
-    - [SET NOT NULL](#set-not-null)
-    - [DROP NOT NULL](#drop-not-null)
-    - [DROP DEFAULT](#drop-default)
-    - [Change type of column](#change-type-of-column)
-- [ADD CONSTRAINT ... PRIMARY KEY USING INDEX ...](#add-constraint--primary-key-using-index-)
+- [CREATE table](#create-table)
+- [DROP table](#drop-table)
+- [Truncate table](#truncate-table)
+- [Temporary tables](#temporary-tables)
+- [ALTER table](#alter-table)
+  - [Examples](#examples)
+    - [ADD COLUMN](#add-column)
+    - [DROP COLUMN](#drop-column)
+    - [ADD CONSTRAINT](#add-constraint)
+      - [UNIQUE](#unique)
+      - [CHECK](#check)
+      - [FOREIGN KEY](#foreign-key)
+    - [RENAME CONSTRAINT](#rename-constraint)
+    - [DROP CONSTRAINT](#drop-constraint)
+    - [ADD PRIMARY KEY](#add-primary-key)
+    - [ALTER COLUMN](#alter-column)
+      - [SET NOT NULL](#set-not-null)
+      - [DROP NOT NULL](#drop-not-null)
+      - [DROP DEFAULT](#drop-default)
+      - [Change type of column](#change-type-of-column)
+  - [ADD CONSTRAINT ... PRIMARY KEY USING INDEX ...](#add-constraint--primary-key-using-index-)
 <!-- TOC -->
 
 <br>
 
-# ALTER TABLE
-## ADD COLUMN
+# CREATE table
+By default, every column is **nullable**.<br>
+
+```sql
+DROP TABLE IF EXISTS child;
+DROP TABLE IF EXISTS parent;
+
+CREATE TABLE IF NOT EXISTS parent (
+    id BIGSERIAL NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    active bool NOT NULL DEFAULT TRUE,
+    PRIMARY KEY (id),
+    CHECK ((char_length((name)::text) > 0))
+);
+
+CREATE TABLE IF NOT EXISTS child (
+    id BIGSERIAL NOT NULL,
+    pid bigint NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    range int4range NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (pid) REFERENCES parent(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    UNIQUE (pid, name) DEFERRABLE INITIALLY DEFERRED,
+    EXCLUDE USING gist (pid WITH =, range WITH &&),
+    CONSTRAINT child_range_bounds CHECK (((lower(range) >= 0) AND (upper(range) < 1000))),
+    CONSTRAINT child_forbid_empty_range CHECK ((range <> int4range(1, 1)))
+);
+```
+
+<br>
+
+# DROP table
+```sql
+CREATE TABLE foo (id SERIAL PRIMARY KEY);
+CREATE TABLE bar (
+    pid INTEGER REFERENCES foo,
+    name TEXT
+);
+
+demo=# \d+ bar
+                                          Table "bookings.bar"
+ Column |  Type   | Collation | Nullable | Default | Storage  | Compression | Stats target | Description
+--------+---------+-----------+----------+---------+----------+-------------+--------------+-------------
+ pid    | integer |           |          |         | plain    |             |              |
+ name   | text    |           |          |         | extended |             |              |
+Foreign-key constraints:
+    "bar_pid_fkey" FOREIGN KEY (pid) REFERENCES foo(id)
+Access method: heap
+
+demo=# \d+ foo
+                                                      Table "bookings.foo"
+ Column |  Type   | Collation | Nullable |             Default             | Storage | Compression | Stats target | Description
+--------+---------+-----------+----------+---------------------------------+---------+-------------+--------------+-------------
+ id     | integer |           | not null | nextval('foo_id_seq'::regclass) | plain   |             |              |
+Indexes:
+    "foo_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "bar" CONSTRAINT "bar_pid_fkey" FOREIGN KEY (pid) REFERENCES foo(id)
+Not-null constraints:
+    "foo_id_not_null" NOT NULL "id"
+Access method: heap
+```
+
+<br>
+
+**Try to drop parnet table**:
+```sql
+DROP TABLE foo;
+ERROR:  cannot drop table foo because other objects depend on it
+DETAIL:  constraint bar_pid_fkey on table bar depends on table foo
+HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+Time: 2.150 ms
+```
+
+**Drop with CASCADE**:
+```sql
+DROP TABLE foo CASCADE;
+
+demo=# \d+ foo
+Did not find any relation named "foo".
+demo=# \d+ bar
+                                          Table "bookings.bar"
+ Column |  Type   | Collation | Nullable | Default | Storage  | Compression | Stats target | Description
+--------+---------+-----------+----------+---------+----------+-------------+--------------+-------------
+ pid    | integer |           |          |         | plain    |             |              |
+ name   | text    |           |          |         | extended |             |              |
+Access method: heap
+
+demo=#
+```
+
+<br>
+
+So, `DROP TABLE foo CASCADE` deletes **FK** constraint from **child** tables, but **child** tables **continue to exist**.<br>
+
+<br>
+
+# Truncate table
+```sql
+TRUNCATE foo;
+DELETE FROM foo;
+```
+
+`TRUNCATE` is faster then `DELETE FROM`.<br>
+
+<br>
+
+# Temporary tables
+A **temporary table**, as its name implied, is a **short-lived table**.<br>
+PostgreSQL automatically **drops** the **temporary tables** *at the end* of a **session** or a **transaction**.<br>
+
+```sql
+CREATE TEMP TABLE my_table
+(                                  
+    id BIGINT NOT NULL,
+    name VARCHAR(15) NOT NULL,
+    prefix inet NOT NULL,
+    EXCLUDE USING gist (id WITH =, prefix inet_ops WITH &&)
+);
+CREATE TABLE
+```
+
+<br>
+
+# ALTER table
+- `ADD COLUMN`:
+```sql
+ALTER TABLE foo ADD COLUMN x INTEGER NOT NULL CHECK (x>0);
+```
+- `DROP COLUMN`:
+```sql
+ALTER TABLE foo DROP COLUMN x
+```
+- `ALTER COLUMN` with **automatic** data conversion to new type:
+```sql
+ALTER TABLE foo ALTER COLUMN x SET DATA TYPE text;
+```
+- `ALTER COLUMN` with **explicit** data conversion to new type, asume that column `x` was of `integer` type and we change it to `text`:
+```sql
+INSERT INTO foo (x) VALUES (10),(11);
+ALTER TABLE foo ALTER COLUMN x SET DATA TYPE text
+USING 
+    CASE
+        WHEN x = 10 THEN 'a'::text
+        WHEN x = 11 THEN 'b'::text
+        ELSE 'z'::text
+    END
+;
+```
+**But** if there is a **constraint**, for example `"foo_x_check" CHECK (x > 0)` the above query will **fail** with **error**:
+`ERROR:  operator does not exist: text > integer`.<br>
+- `ADD CONSTRAINT`:
+```sql
+CREATE TABLE foo (id SERIAL PRIMARY KEY);
+CREATE TABLE bar (name TEXT);
+ALTER TABLE bar ADD CONSTRAINT fk_pid FOREIGN KEY (pid) REFERENCES foo (id);
+```
+- `DROP CONSTRAINT`:
+```sql
+ALTER TABLE bar DROP CONSTRAINT fk_pid
+```
+- `ADD CHECK|UNIQUE|FOREIGN KEY .. REFERENCES ..`:
+```sql
+CREATE TABLE bar (name TEXT);
+ALTER TABLE bar ADD CHECK (name <> 'abc');
+```
+- `RENAME COLUMN`:
+```sql
+ALTER TABLE foo RENAME COLUMN x TO y;
+```
+- `RENAME CONSTRAINT`:
+```sql
+ALTER TABLE foo RENAME CONSTRAINT foo_pkey TO foo_pkey_new;
+```
+
+<br>
+
+## Examples
+### ADD COLUMN
 ```sql
 ALTER TABLE some_tbl
     ADD COLUMN id BIGSERIAL NOT NULL;
@@ -30,7 +212,7 @@ ALTER TABLE some_tbl
 
 <br>
 
-## DROP COLUMN
+### DROP COLUMN
 ```sql
 ALTER TABLE some_tbl
     DROP COLUMN id;
@@ -38,8 +220,8 @@ ALTER TABLE some_tbl
 
 <br>
 
-## ADD CONSTRAINT
-### UNIQUE
+### ADD CONSTRAINT
+#### UNIQUE
 ```sql
 ALTER TABLE some_tbl
     ADD CONSTRAINT custom_name_pkey UNIQUE (id);
@@ -47,7 +229,7 @@ ALTER TABLE some_tbl
 
 <br>
 
-### CHECK
+#### CHECK
 ```sql
 ALTER TABLE some_tbl
     ADD CONSTRAINT some_tbl_check
@@ -58,7 +240,7 @@ ALTER TABLE some_tbl
 
 <br>
 
-### FOREIGN KEY
+#### FOREIGN KEY
 ```sql
 ALTER TABLE distributors 
     ADD CONSTRAINT some_fk FOREIGN KEY (col1) REFERENCES tbl2 (col2);
@@ -66,7 +248,7 @@ ALTER TABLE distributors
 
 <br>
 
-## RENAME CONSTRAINT
+### RENAME CONSTRAINT
 ```sql
 DO $$ BEGIN
     ALTER TABLE child RENAME CONSTRAINT child_forbid_empty_range TO forbid_empty_range;
@@ -77,7 +259,7 @@ END $$;
 
 <br>
 
-## DROP CONSTRAINT
+### DROP CONSTRAINT
 ```sql
 ALTER TABLE ONLY tbl
     DROP CONSTRAINT tbl_excl;
@@ -85,7 +267,7 @@ ALTER TABLE ONLY tbl
 
 <br>
 
-## ADD PRIMARY KEY
+### ADD PRIMARY KEY
 ```sql
 ALTER TABLE some_tbl 
     ADD PRIMARY KEY (id);
@@ -93,8 +275,8 @@ ALTER TABLE some_tbl
 
 <br>
 
-## ALTER COLUMN
-### SET NOT NULL
+### ALTER COLUMN
+#### SET NOT NULL
 ```sql
 ALTER TABLE some_tbl 
     ALTER COLUMN my_column SET NOT NULL;
@@ -102,7 +284,7 @@ ALTER TABLE some_tbl
 
 <br>
 
-### DROP NOT NULL
+#### DROP NOT NULL
 ```sql
 ALTER TABLE ONLY fw_icmp_messages
     ALTER COLUMN code DROP NOT NULL;
@@ -110,13 +292,13 @@ ALTER TABLE ONLY fw_icmp_messages
 
 <br>
 
-### DROP DEFAULT
+#### DROP DEFAULT
 ```sql
 ALTER TABLE some_tbl 
     ALTER COLUMN my_column DROP DEFAULT;
 ```
 
-### Change type of column
+#### Change type of column
 PostgreSQL allows you to convert the values of a column to the new ones while changing its data type by adding a `USING` clause as follows:<br>
 1. Consider following `enum` types:
 ```sql
@@ -254,8 +436,8 @@ ALTER TABLE ONLY fw_icmp_messages
 
 <br>
 
-# ADD CONSTRAINT ... PRIMARY KEY USING INDEX ...
-How to replace an automatically created primary key index by another index with an included column.<br>
+## ADD CONSTRAINT ... PRIMARY KEY USING INDEX ...
+How to replace an automatically created primary key index by another index.<br>
 
 ```sql
 CREATE UNIQUE INDEX ON bookings(book_ref) INCLUDE (book_date);

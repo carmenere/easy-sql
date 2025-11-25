@@ -1,9 +1,12 @@
 # SELECT ... FROM (VALUES ...)
 ```sql
-SELECT * FROM (VALUES (5, 2)) as t(col1, col2);
+SELECT * FROM (
+    VALUES (5, 2), (7, 3)
+) as t(col1, col2);
  col1 | col2
 ------+------
     5 |    2
+    7 |    3
 (1 row)
 ```
 

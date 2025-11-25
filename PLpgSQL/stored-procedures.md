@@ -11,7 +11,8 @@
 There are 2 variants to create `function`:
 1. Using `CREATE FUNCTION` directly:
 ```sql
-CREATE FUNCTION function_name(arg1 type [, ...]) RETURNS type
+CREATE FUNCTION function_name(arg1 type [, ...])
+RETURNS type
 AS $$
 DECLARE
     /* variables */
@@ -26,7 +27,8 @@ $$ LANGUAGE plpgsql;
 ```sql
 DO $so_proc$ 
 BEGIN
-    CREATE FUNCTION function_name(arg1 type [, ...]) RETURNS type
+    CREATE FUNCTION function_name(arg1 type [, ...])
+    RETURNS type
     AS $$
     DECLARE
         /* variables */

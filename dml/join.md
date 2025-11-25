@@ -1,3 +1,22 @@
+# Table of contents
+<!-- TOC -->
+- [Table of contents](#table-of-contents)
+- [JOIN](#join)
+  - [Join Types](#join-types)
+  - [INNER vs. OUTER](#inner-vs-outer)
+  - [USING clause](#using-clause)
+  - [NATURAL clause](#natural-clause)
+  - [Subqueries](#subqueries)
+  - [LATERAL subqueries](#lateral-subqueries)
+    - [Example](#example)
+  - [LATERAL JOIN](#lateral-join)
+    - [Lateral `JOIN`](#lateral-join-1)
+    - [Non-lateral `JOIN`](#non-lateral-join)
+- [ASOF JOIN](#asof-join)
+<!-- TOC -->
+
+<br>
+
 # JOIN
 The general syntax: `SELECT ... FROM T1 JOIN T2 [ ON join_condition ]`.
 

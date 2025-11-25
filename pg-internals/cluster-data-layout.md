@@ -206,10 +206,10 @@ There are some predefined schemas for any database:
 **Qualified names** consist of the **schema** name and **table** name, separated by a dot: `schema.table`.<br>
 **Unqualified names** consist of just **table** name. Qualified names are **tedious** to write and tables are often referred to by unqualified names.<br>
 
-If schema is **not** specified explicitly in the query, the **first** appropriate schema from **search path** is chosen.<br>
+If schema is **not** specified explicitly in the query, the **first** appropriate schema from **search path** is chosen. Such schema is called **current schema**.<br>
 The **search path** is a **list of schemas** to look in.<br>
 
-To **show current search path** there is a command: `show search_path`:
+To **show search path** there is a command: `show search_path`:
 ```sql
 example=# show search_path;
    search_path
@@ -220,10 +220,9 @@ example=# show search_path;
 
 <br>
 
-The `$user` means a schema with the same name as the current user, if such schema doesn't exist the entry is ignored.<br>
-The **first schema** in the _search path_ that **exists** is used for **created objects**.<br>
+It is possible to **change** _search path_: `SET search_path TO 'bookings, "$user", public';`.<br>
+The `$user` means a schema with the same name as the **current user**, if such schema **doesn't exist** the entry is **ignored**.<br>
 Postgresql **implicitly** adds `pg_catalog` schema to the _search path_. If it is **not** named **explicitly** in the _search path_ then it is **implicitly** used **before** using _search path_.<br>
-It is possible to **change** _search path_: `SET search_path TO myschema,public;`.<br>
 
 <br>
 
