@@ -349,19 +349,19 @@ This is because it is the only sensible way to map the standard isolation levels
 ## SET transaction isolation level for current session
 ### `SET`
 ```sql
-so_rs=# BEGIN;
+BEGIN;
 BEGIN
 
-so_rs=# SET TRANSACTION ISOLATION LEVEL read uncommitted;
+SET TRANSACTION ISOLATION LEVEL read uncommitted;
 SET
 
-so_rs=# SET TRANSACTION ISOLATION LEVEL read committed;
+SET TRANSACTION ISOLATION LEVEL read committed;
 SET
 
-so_rs=# SET TRANSACTION ISOLATION LEVEL repeatable read;
+SET TRANSACTION ISOLATION LEVEL repeatable read;
 SET
 
-so_rs=# SET TRANSACTION ISOLATION LEVEL serializable;
+SET TRANSACTION ISOLATION LEVEL serializable;
 SET
 ```
 
@@ -373,20 +373,16 @@ Variants:
 - `BEGIN TRANSACTION ISOLATION LEVEL serializable;`
 
 ```sql
-demo=# BEGIN ISOLATION LEVEL serializable;
-BEGIN
-Time: 3.070 ms
-demo=*# SHOW transaction isolation level;
+BEGIN ISOLATION LEVEL serializable;
+
+SHOW transaction isolation level;
  transaction_isolation
 -----------------------
  serializable
 (1 row)
 
-Time: 1.154 ms
-demo=*# END;
+END;
 COMMIT
-Time: 1.406 ms
-demo=#
 ```
 
 <br>
@@ -394,7 +390,7 @@ demo=#
 ## SHOW transaction isolation level for current session
 ### Current transaction isolation
 ```sql
-so_rs=# SHOW transaction isolation level;
+SHOW transaction isolation level;
  transaction_isolation
 -----------------------
  serializable
@@ -405,7 +401,7 @@ so_rs=# SHOW transaction isolation level;
 
 ### Default transaction isolation
 ```sql
-so_rs=# SHOW default_transaction_isolation;
+SHOW default_transaction_isolation;
  default_transaction_isolation
 -------------------------------
  read committed
@@ -431,10 +427,10 @@ $ grep transac /usr/local/var/postgresql@12/postgresql.conf
 
 ### Through ALTER DATABASE
 ```sql
-so_rs=# ALTER DATABASE so_rs SET DEFAULT_TRANSACTION_ISOLATION TO 'serializable';
+ALTER DATABASE so_rs SET DEFAULT_TRANSACTION_ISOLATION TO 'serializable';
 ALTER DATABASE
 
-so_rs=# SHOW default_transaction_isolation;
+SHOW default_transaction_isolation;
  default_transaction_isolation
 -------------------------------
  serializable
