@@ -1,6 +1,6 @@
 # CASE-WHEN-THEN-ELSE-END
 ```sql
-demo=# SELECT model, range AS distance,
+SELECT model, range AS distance,
     CASE
         WHEN range < 2000 THEN 'Ближнемагистральный'
         WHEN range < 5000 THEN 'Среднемагистральный'
@@ -21,5 +21,4 @@ demo=# SELECT model, range AS distance,
  Boeing 777-300ER        |    14600 | Дальнемагистральный
  Aerobus A350-1000       |    16700 | Дальнемагистральный
 (10 rows)
-
 ```
