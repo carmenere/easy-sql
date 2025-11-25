@@ -1,31 +1,33 @@
 # Table of contents
 <!-- TOC -->
-* [Table of contents](#table-of-contents)
-* [Data consistency](#data-consistency)
-* [The ANSI SQL isolation Levels](#the-ansi-sql-isolation-levels)
-* [Serialization error](#serialization-error)
-* [The concurrent anomalies](#the-concurrent-anomalies)
-  * [P0: Dirty write](#p0-dirty-write)
-  * [P1: Dirty read](#p1-dirty-read)
-  * [P2: Non-repeatable read or Fuzzy read](#p2-non-repeatable-read-or-fuzzy-read)
-  * [P3: Phantom read](#p3-phantom-read)
-  * [P4: Lost update](#p4-lost-update)
-  * [Read Skew](#read-skew)
-  * [Write Skew](#write-skew)
-    * [Write Skew: example](#write-skew-example)
-  * [Read-only transaction anomaly](#read-only-transaction-anomaly)
-* [Concurrency Control](#concurrency-control)
-  * [Pessimistic lock vs. Optimistic lock](#pessimistic-lock-vs-optimistic-lock)
-* [MVCC. SI. SSI](#mvcc-si-ssi)
-* [Transaction isolation levels](#transaction-isolation-levels)
-* [Examples](#examples)
-  * [SET transaction isolation level for current session](#set-transaction-isolation-level-for-current-session)
-  * [SHOW transaction isolation level for current session](#show-transaction-isolation-level-for-current-session)
-    * [Current](#current)
-    * [Default](#default)
-  * [SET default transaction isolation level](#set-default-transaction-isolation-level)
-    * [Through postgresql.conf](#through-postgresqlconf)
-    * [Through ALTER DATABASE](#through-alter-database)
+- [Table of contents](#table-of-contents)
+- [Data consistency](#data-consistency)
+- [The transaction isolation levels](#the-transaction-isolation-levels)
+- [Serialization error](#serialization-error)
+- [The concurrent anomalies](#the-concurrent-anomalies)
+  - [P0: Dirty write](#p0-dirty-write)
+  - [P1: Dirty read](#p1-dirty-read)
+  - [P2: Non-repeatable read or Fuzzy read](#p2-non-repeatable-read-or-fuzzy-read)
+  - [P3: Phantom read](#p3-phantom-read)
+  - [P4: Lost update](#p4-lost-update)
+  - [Read Skew](#read-skew)
+  - [Write Skew](#write-skew)
+    - [Write Skew: example](#write-skew-example)
+  - [Read-only transaction anomaly](#read-only-transaction-anomaly)
+- [Concurrency Control](#concurrency-control)
+  - [Pessimistic lock vs. Optimistic lock](#pessimistic-lock-vs-optimistic-lock)
+- [MVCC. SI. SSI](#mvcc-si-ssi)
+- [Transaction isolation levels](#transaction-isolation-levels)
+- [Examples](#examples)
+  - [SET transaction isolation level for current session](#set-transaction-isolation-level-for-current-session)
+    - [`SET`](#set)
+    - [`BEGIN`](#begin)
+  - [SHOW transaction isolation level for current session](#show-transaction-isolation-level-for-current-session)
+    - [Current transaction isolation](#current-transaction-isolation)
+    - [Default transaction isolation](#default-transaction-isolation)
+  - [SET default transaction isolation level](#set-default-transaction-isolation-level)
+    - [Through postgresql.conf](#through-postgresqlconf)
+    - [Through ALTER DATABASE](#through-alter-database)
 <!-- TOC -->
 
 <br>
@@ -345,27 +347,52 @@ This is because it is the only sensible way to map the standard isolation levels
 
 # Examples
 ## SET transaction isolation level for current session
+### `SET`
 ```sql
 so_rs=# BEGIN;
 BEGIN
 
-so_rs=# SET transaction isolation level read uncommitted;
+so_rs=# SET TRANSACTION ISOLATION LEVEL read uncommitted;
 SET
 
-so_rs=# SET transaction isolation level read committed;
+so_rs=# SET TRANSACTION ISOLATION LEVEL read committed;
 SET
 
-so_rs=# SET transaction isolation level repeatable read;
+so_rs=# SET TRANSACTION ISOLATION LEVEL repeatable read;
 SET
 
-so_rs=# SET transaction isolation level serializable;
+so_rs=# SET TRANSACTION ISOLATION LEVEL serializable;
 SET
 ```
 
 <br>
 
+### `BEGIN`
+Variants:
+- `BEGIN ISOLATION LEVEL serializable;`
+- `BEGIN TRANSACTION ISOLATION LEVEL serializable;`
+
+```sql
+demo=# BEGIN ISOLATION LEVEL serializable;
+BEGIN
+Time: 3.070 ms
+demo=*# SHOW transaction isolation level;
+ transaction_isolation
+-----------------------
+ serializable
+(1 row)
+
+Time: 1.154 ms
+demo=*# END;
+COMMIT
+Time: 1.406 ms
+demo=#
+```
+
+<br>
+
 ## SHOW transaction isolation level for current session
-### Current
+### Current transaction isolation
 ```sql
 so_rs=# SHOW transaction isolation level;
  transaction_isolation
@@ -376,7 +403,7 @@ so_rs=# SHOW transaction isolation level;
 
 <br>
 
-### Default
+### Default transaction isolation
 ```sql
 so_rs=# SHOW default_transaction_isolation;
  default_transaction_isolation

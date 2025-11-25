@@ -1,6 +1,16 @@
+# Subquery
+**Subquery** can be used in
+- as table in JOIN: `SELECT * FROM foo JOIN ( SELECT ... ) ... ;`
+- as table in FROM `SELECT * FROM ( SELECT ... ) ... ;`
+- as value in column list of SELECT: `SELECT a, (SELECT ... ) AS c1, (SELECT ... ) AS c2, ...;`
+- in HAVING: `SELECT a, b, count(*) FROM foo GROUP BY a,b HAVING a IN (SELECT ... ) ORDER BY a;`
+- **nested subqueries**: `SELECT * FROM ( SELECT a, (SELECT ... ) ) ... ;`
+
+<br>
+
 # Normal vs. correlated subquery
 - In **normal subquery** the **inner** query is executed **first** and the **outer** query is **always dependent** on **inner** query.
-- In **correlated subquery** the **outer** query is executed **first** and the **inner** query is **always dependent** on **outer** query.
+- In **correlated subquery** the **outer** query is executed **first** and the **inner** query is **always dependent** on **outer** query (*correlated* means *related* here).
 
 <br>
 

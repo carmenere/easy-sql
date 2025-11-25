@@ -257,7 +257,7 @@ SELECT E'Ann\'s' AS possessive_case;
 |`date`| |calendar date (year, month, day)|
 |`time [ (p) ] [ without time zone ]`| |time of day (**no** time zone)|
 |`time [ (p) ] with time zone`|`timetz`|time of day, **including** time zone|
-|`timestamp [ (p) ] [ without time zone ]`| |date and time (**no** time zone)|
+|`timestamp [ (p) ] [ without time zone ]`|`timestamp`|date and time (**no** time zone)|
 |`timestamp [ (p) ] with time zone`|`timestamptz`|date and time, **including** time zone|
 |`interval [ fields ] [ (p) ]`| |time span|
 

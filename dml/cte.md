@@ -14,7 +14,6 @@ WITH
     cte_N (column_list) AS (
         UPDATE ...  
     )
-
 SELECT ... / UPDATE ... FROM ... / DELETE ... ;
 ```
 

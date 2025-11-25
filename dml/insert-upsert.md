@@ -2,17 +2,14 @@
 ```sql
 INSERT INTO tbl(col1, col2, ...) 
 VALUES (val11, val12, ... ), (val21, va22, ... )
-ON CONFLICT {tgt} {action};
+[ ON CONFLICT [ conflict_target ] conflict_action ];
 ```
 
-<br>
-
 The `{tgt}` can be one of:
+- **empty**: if `{tgt}` is **omitted** then **PK** or **any** **UNIQUE** is used;
 - `(column_name)`;
 - `ON CONSTRAINT constraint_name`;
 - `WHERE predicate`;
-
-<br>
 
 The `{action}` can be one of the following:
 - `DO NOTHING` means **do nothing** if the **row already exists** in the table;
@@ -21,27 +18,16 @@ The `{action}` can be one of the following:
 <br>
 
 ## UPSERT
-`UPSERT` logic:
-- if row **exists** perform `UPDATE`;
-- if row **doesn't** exist perform `INSERT`;
+**UPSERT** (**UP**date or in**SERT**) means `INSERT ... ON CONFLICT DO UPDATE SET col_1 = excluded.col_1 `:
+- if row **exists** it performs `UPDATE`;
+  - there is special `excluded` table is used to **reference** values **originally** proposed for insertion:
+- if row **doesn't** exist it performs `INSERT`;
 
-<br>
-
-In other words, `UPSERT` means `INSERT ... ON CONFLICT UPDATE ... `.
-
-<br>
-
-## EXCLUDED
-The `SET` and `WHERE` clauses in `ON CONFLICT DO UPDATE` have access
-- to the **existing row** using the **table's name** (or an **alias**);
-- to **rows** proposed for insertion using the special `excluded` table;
-
-### Example
+**Example**:
 ```sql
 INSERT INTO account AS a (id, name, surname, address)
 VALUES (1, 'foo', 'bar', 'baz')
 ON CONFLICT (id)
-DO UPDATE SET
-    name=EXCLUDED.name,
-    surname=EXCLUDED.surname;
+DO UPDATE SET name=excluded.name,
+    surname=excluded.surname;
 ```
