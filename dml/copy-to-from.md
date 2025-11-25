@@ -29,21 +29,21 @@ COPY table_name [ ( col_1 [, ...] ) ] TO { 'path_to_file' | STDOUT }
 
 <br>
 
-# Load data FROM CSV file TO the table
+## Load data FROM CSV file TO the table
 ```sql
 COPY table_name FROM '/tmp/table_name.csv' WITH (FORMAT csv);
 ```
 
 <br>
 
-# Export data FROM table TO CSV file
+## Export data FROM table TO CSV file
 ```sql
 COPY table_name TO '/tmp/table_name.csv' DELIMITER ',' CSV HEADER;
 ```
 
 <br>
 
-# COPY .. FROM STDIN as INSERT
+## COPY .. FROM STDIN as INSERT
 ```sql
 COPY foo FROM STDIN WITH (FORMAT csv);
 Enter data to be copied followed by a newline.
