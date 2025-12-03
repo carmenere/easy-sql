@@ -1,11 +1,11 @@
 # Table of contents
 <!-- TOC -->
 - [Table of contents](#table-of-contents)
-- [CREATE table](#create-table)
-- [DROP table](#drop-table)
-- [Truncate table](#truncate-table)
+- [CREATE TABLE](#create-table)
+- [DROP TABLE](#drop-table)
+- [TRUNCATE vs. DELETE FROM](#truncate-vs-delete-from)
 - [Temporary tables](#temporary-tables)
-- [ALTER table](#alter-table)
+- [ALTER TABLE](#alter-table)
   - [Examples](#examples)
     - [ADD COLUMN](#add-column)
     - [DROP COLUMN](#drop-column)
@@ -26,7 +26,7 @@
 
 <br>
 
-# CREATE table
+# CREATE TABLE
 By default, every column is **nullable**.<br>
 
 ```sql
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS child (
 
 <br>
 
-# DROP table
+# DROP TABLE
 ```sql
 CREATE TABLE foo (id SERIAL PRIMARY KEY);
 CREATE TABLE bar (
@@ -123,13 +123,13 @@ So, `DROP TABLE foo CASCADE` deletes **FK** constraint from **child** tables, bu
 
 <br>
 
-# Truncate table
+# TRUNCATE vs. DELETE FROM
 ```sql
 TRUNCATE foo;
 DELETE FROM foo;
 ```
 
-`TRUNCATE` is faster then `DELETE FROM`.<br>
+`TRUNCATE` is faster then `DELETE FROM`: `TRUNCATE` **immediately** reclaims disk space, unlike `DELETE`, which **may require** a subsequent `VACUUM` operation to fully free up space.<br>
 
 <br>
 
@@ -150,7 +150,7 @@ CREATE TABLE
 
 <br>
 
-# ALTER table
+# ALTER TABLE
 - `ADD COLUMN`:
 ```sql
 ALTER TABLE foo ADD COLUMN x INTEGER NOT NULL CHECK (x>0);
