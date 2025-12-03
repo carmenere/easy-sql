@@ -1,5 +1,12 @@
 # initdb
-`initdb` is used for creating a new PostgreSQL database cluster. `initdb` can also be invoked via `pg_ctl`.<br>
+`initdb` **creates** a **new** PostgreSQL **database cluster**. `initdb` can also be invoked via `pg_ctl`.<br>
+
+Creating a database cluster consists of:
+- **creating** the **directories** in which the cluster data will live;
+- **generating** the **shared catalog tables** (**tables that belong to the whole cluster** rather than to any particular database);
+- **creating** the `postgres`, `template1`, and `template0` **databases**;
+
+<br>
 
 `initdb` must be run under the user **that** will **own** the **server process**, because the server needs to have **access** to the **files** and **directories** that `initdb` creates.<br>
 
