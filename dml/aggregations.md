@@ -5,19 +5,22 @@
 - [HAVING](#having)
 - [Aggregate functions](#aggregate-functions)
 - [Window functions](#window-functions)
+  - [Window frame](#window-frame)
+  - [Types of window functions](#types-of-window-functions)
   - [Examples](#examples)
     - [Example](#example)
-    - [ORDER BY](#order-by)
-    - [PARTITION BY](#partition-by)
-- [Select first row from every group](#select-first-row-from-every-group)
-  - [CTE version](#cte-version)
-  - [Subquery version](#subquery-version)
-- [TOP N](#top-n)
-  - [Preparations](#preparations)
-  - [Select TOP 2 src\_ip per TOP 5 uri](#select-top-2-src_ip-per-top-5-uri)
-    - [CTE](#cte)
-    - [Subqueries](#subqueries)
-- [Example](#example-1)
+- [Examples](#examples-1)
+  - [Case: get first row from every group](#case-get-first-row-from-every-group)
+    - [CTE version](#cte-version)
+    - [Subquery version](#subquery-version)
+  - [Case: get top N](#case-get-top-n)
+    - [Preparation](#preparation)
+    - [Select TOP 2 src\_ip per TOP 5 uri](#select-top-2-src_ip-per-top-5-uri)
+      - [CTE](#cte)
+      - [Subqueries](#subqueries)
+  - [Case: get sales per country + city](#case-get-sales-per-country--city)
+    - [Preparation](#preparation-1)
+    - [Select](#select)
 <!-- TOC -->
 
 <br>
@@ -120,13 +123,32 @@ For **each group**, you can apply an **aggregate function**:
 <br>
 
 # Window functions
+Every *function* `func(col_1)` followed by `OVER ( PARTITION BY ... ORDER BY ... )` clause becomes **window function**.<br>
+Unlike *aggregate functions* that **collapse rows** into a single result, **window functions** return a value **for each row** in the result set.<br>
+
+**Syntax** of *window functions*:
+```sql
+SELECT <window_func>(<table_field>)
+OVER (
+      [PARTITION BY <partition_columns>]
+      [ORDER BY <sort_columns>]
+      [ROWS|RANGE <window_frame_definition>]
+)
+```
+
+The `OVER()`clause is used to define the **window**.<br>
+A **window** is a **group of rows** that will be passed to the **window function**. The **window functions** are **applied** to **window**.<br>
+**Empty** `OVER ()` means that **window** is the **whole resulting rows**.<br>
+
+<br>
+
 There 2 variant of syntax:
 - *window* is **directly** defined in list of columns:
 ```sql
 SELECT window_func(col_1) OVER ( PARTITION BY col_2 ORDER BY col_3 ) AS t
 ORDER BY col_7;
 ```
-- **reference** to *window defenition*:
+- **reference** to *window defenition* `SELECT .. FROM .. WINDOW win AS (...) ...`:
 ```sql
 SELECT
     window_func(col_1) OVER win AS t1,
@@ -139,35 +161,38 @@ ORDER BY col_9;
 
 <br>
 
-Every *aggregate function* followed by `window_func(col_1) OVER ( PARTITION BY ... ORDER BY ... )` clause becomes **window function**.<br>
-Unlike *aggregate functions* that **collapse rows** into a single result, **window functions** return a value **for each row** in the result set.<br>
+**Example**:
+```sql
+SELECT
+    id,
+    section,
+    header,
+    score,
+    row_number() OVER (PARTITION BY section ORDER BY score DESC)  AS rating_in_section
+FROM news
+ORDER BY section, rating_in_section;
+```
 
 <br>
 
-The `OVER()` clause specifies the **window** on which the **window function** will operate.<br>
-A **window** is a a **result set of rows** that are somehow **related**.<br>
-**Empty window** `OVER ()` means that **whole result** is a **window**.<br>
-**Window function** `window_func` is applied to all rows inside **window** `window_func(col_1) OVER ( PARTITION BY ... ORDER BY ... )`.<br>
+The `OVER` clause has 3 **optional** clauses to **customize** the **window**:
+- `PARTITION BY <partition_columns>`
+  - **divides** the *resulting rows* into **non-overlapping** subsets of rows (aka **partitions**);
+  - each **partition** contains only rows with the **same** values in **all** columns, specified in `PARTITION BY`;
+  - **window functions** are applied **separately** to each partition, as if each were a **separate** data set;
+  - if you **omit** the `PARTITION BY` clause, the **window function** will treat the **whole result** set as a **single partition**;
+- `ORDER BY <sort_columns>`
+  - **sorts** rows in **each** partition **independently**;
+  - the `ORDER BY` clause uses the `NULLS FIRST` or `NULLS LAST` option to specify whether **nullable** values should be **first** or **last** in the result set;
+  - the **default** is `NULLS LAST` option;
+- `ROWS|RANGE <window_frame_definition>`
+  - defines how rows are included into **window frame**;
+  - in other words, this parameter defines how many rows to include **before** and **after** the **current row** in the **window frame**;
+  - the **window frame** can **change** from row to row;
 
 <br>
 
-The `PARTITION BY col_1 [, col_2, ... ]` clause inside `OVER ()` **divides** the *window* into **independent logical groups** (aka **partitions**) based on the values of one or more specified columns. In other words **all rows inside partiton** have the **same value** in columns, specified in `PARTITION BY`.<br>
-The **window function** then operates **independently** within each of these *partitions*.<br>
-The `PARTITION BY` clause is optional. If you **omit** the `PARTITION BY` clause, the **window function** will treat the **whole result** set as a **single partition**.<br>
-
-<br>
-
-The `ORDER BY col_1 [, col_2, ... ]` clause **inside** `OVER ()` specifies the **order of rows in each partition** to which the window function is applied.<br>
-**Every partition** is **sorted independently**.<br>
-This ordering is crucial for functions that depend on row order, such as **ranking functions** (`row_number()`, `rank()`) or **cumulative calculations** (`sum()`).<br>
-
-<br>
-
-The `ORDER BY` clause uses the `NULLS FIRST` or `NULLS LAST` option to specify whether **nullable** values should be **first** or **last** in the result set. The **default** is `NULLS LAST` option.<br>
-
-<br>
-
-**Example**: consider table `(name, age)`, then `PARTITION BY age` divides all rows of *result set* into **partitions** where **all rows inside partiton** have the **same value** in column `age`:
+**Example**. Consider table `(name, age)`, then `PARTITION BY age` divides all rows of *result set* into **partitions** where **all rows inside partiton** have the **same value** in column `age`:
 - **partition 1** (`age` = **30**):
 ```
 
@@ -190,28 +215,37 @@ The `ORDER BY` clause uses the `NULLS FIRST` or `NULLS LAST` option to specify w
 
 <br>
 
-A **window frame** is a **subset** of rows in the **current partition** that are somehow **related** to the **current row**. The window frame is evaluated separately within each partition. The window functions are **applied** to **window frame**.<br>
+## Window frame
+A **window frame** is a **subset** of rows in the **current partition** that are somehow **related** to the **current row**.<br>
+The **window frame** is evaluated **separately** within each partition. 
 In other words, a **window frame** refines which rows within that partition are included in the calculation.<br>
 A **window frame** is always bound to **current row**.<br>
+The **window frame** can **change** from row to row.<br>
 
-A **window frame** can be **explicitly defined** by `ROWS`, `RANGE`, and `GROUPS` clauses. They are all **optional**:
-```sql
-OVER ([PARTITION BY <columns>] [ORDER BY <columns>] [ROWS | RANGE BETWEEN <lower_bound> AND <upper_bound>])
-```
-
-The `lower_bound` in `ROWS | RANGE` clauses can be:
-- `UNBOUNDED PRECEDING`: **all** rows **before** the *current row*;
-- `n PRECEDING`: **n** rows **before** the *current row*;
-- `CURRENT ROW`: **just** the *current row*;
-
-The `upper_bound` in `ROWS | RANGE` clauses can be:
-- `CURRENT ROW`: **just** the *current row*;
-- `n FOLLOWING`: **n** rows **after** the *current row*;
-- `UNBOUNDED FOLLOWING`: **all** rows **after** the *current row*;
+A `<window_frame_definition>` in `ROWS|RANGE <window_frame_definition>` is specified as `BETWEEN <lower_bound> AND <upper_bound>`:
+- where the `lower_bound` of **window frame** can be:
+  - `UNBOUNDED PRECEDING`: **all** rows **before** the *current row*;
+  - `n PRECEDING`: **n** rows **before** the *current row*;
+  - `CURRENT ROW`: **just** the *current row*;
+- where thw `upper_bound` of **window frame** can be:
+  - `CURRENT ROW`: **just** the *current row*;
+  - `n FOLLOWING`: **n** rows **after** the *current row*;
+  - `UNBOUNDED FOLLOWING`: **all** rows **after** the *current row*;
 
 <br>
 
-It is possible to use a **shorter version** of the **window frame definition**:
+**Full syntax examples**:
+```sql
+RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+```
+
+```sql
+ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+```
+
+<br>
+
+Possible **window frames definitions**:
 - `UNBOUNDED PRECEDING` is the same as `BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW`;
 - `UNBOUNDED FOLLOWING` is the same as `BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING`;
 - `n PRECEDING` is the same as `BETWEEN n PRECEDING AND CURRENT ROW`, **n** is an integer value;
@@ -219,13 +253,70 @@ It is possible to use a **shorter version** of the **window frame definition**:
 
 <br>
 
+Examples of **window frames definitions**:
+![window_frame_definitions](/img/window_frame_definitions.png)
+
+<br>
+
+The `ROWS` and `RANGE` work differently:
+- `ROWS`
+  - in `ROWS` **mode**, `CURRENT ROW` is actually the **current row**;
+  - it defines **window frames** based on the **physical position** of rows relative to the **current row**;
+    - for example, `1 PRECEDING` means **one** row **before** the **current** one;
+  - it makes **precise frame**;
+- `RANGE`
+  - in `RANGE` **mode** the `CURRENT ROW` means **not** only actually current row, instead the `CURRENT ROW` is a **set of all peer rows**;
+  - a **peer row** is a row that has **equivalent** values in **all** columns specified in `ORDER BY` clause (aka **sorting columns**) to the **current row**;
+  - it defines **window frames** based on **values of** `<sort_columns>` of `ORDER BY`;
+  - it makes **dynamic frames**, i.e. frames defined with `RANGE` can vary depending on the data;
+
+<br>
+
 The **default** *window frame* definition depends on `ORDER BY`:
-- without `ORDER BY`, the **default frame** is `RANGE UNBOUNDED PRECEDING`, which is the same as `ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING`;
-  - this means **all** rows of the *partition* are included in the *window frame*, since **all** rows become *peers* of the *current row*;
-- with `ORDER BY`, the **default frame** is `RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW`;
+- **with** `ORDER BY`, the **default frame** is `RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW` (or shorter version `RANGE UNBOUNDED PRECEDING`);
   - in `RANGE` **mode** the `CURRENT ROW` means **not** only actually current row, instead the `CURRENT ROW` is a **set of all peer rows**;
   - a **peer row** is a row that has **equivalent** values in **all** columns specified in `ORDER BY` clause (aka **sorting criteria**) to the **current row**;
+- **without** `ORDER BY`, the **default frame** is `ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING`;
+  - this means **all** rows of the *partition* are included in the *window frame*, since **all** rows become *peers* of the *current row*;
 - in `ROWS` **mode**, `CURRENT ROW` is actually the **current row**;
+
+<br>
+
+## Types of window functions
+- **Aggregate**:
+  - `avg()`
+  - `count()`
+  - `max()`
+  - `min()`
+  - `sum()`
+- **Ranking**:
+  - `row_number()`
+  - `rank()`
+    - firstly, rows are **sorted** by one or more **sorting columns**;
+    - each row or group of rows that have the same values in the **sorting columns** is assigned a rank, the rank starts from 1;
+    - if **several rows** have the **same values** in the **sorting columns**, they receive the **same rank**;
+    - it **skips ranks**: after a group of rows with the same rank, the **next rank increases by the number of rows** in that group;
+      - for example, if **two** rows have rank **2**, the **next** row **gets** rank **4**, **not** 3;
+  - `dense_rank()`
+    - unlike the `rank()` function, it **doesn't skip** ranks and after a group of identical values, the **next rank increases by one**, **not** by the number of rows;
+      - for example, if **two** rows have rank **2**, the **next** row will get rank **3**, **not** 4;
+- **Offset**:
+  - `lag()`
+    - accesses data **from previous rows** of the window;
+    - it has **3** arguments:
+      - the **column** whose value needs to be returned;
+      - the **number of rows to offset** (**default** is **1**);
+      - the **default** value to return if the offset returns a `NULL` value;
+  - `lead()`
+    - accesses data **from following rows** of the window;
+    - it has **3** arguments:
+      - the **column** whose value needs to be returned;
+      - the **number of rows to offset** (**default** is **1**);
+      - the **default** value to return if the offset returns a `NULL` value;
+  - `first_value()`
+    - returns the first value in the window;
+  - `last_value()`
+    - returns the last value in the window;
 
 <br>
 
@@ -252,47 +343,9 @@ Consider query: `SELECT col_1 OVER (ORDER BY col_1)`. In this query `OVER (ORDER
 
 <br>
 
-### ORDER BY
-- `ORDER BY` **at the end** of query sorts the **final** result;
-- `ORDER BY` **inside window** determines **order** of appling **window function** `row_number()` to rows inside **window**;
-
-<br>
-
-```sql
-SELECT
-    id,
-    section,
-    header,
-    score,
-    row_number() OVER (ORDER BY score DESC)  AS rating
-FROM news
-ORDER BY id;
-```
-
-<br>
-
-### PARTITION BY
-- `PARTITION BY [expression]` inside window splits it into partitions and applies **window function** to every partition independently.<br>
-- if `PARTITION BY [expression]` is **not** specified then the **whole window** is **partition**.<br>
-
-<br>
-
-```sql
-SELECT
-    id,
-    section,
-    header,
-    score,
-    row_number() OVER (PARTITION BY section ORDER BY score DESC)  AS rating_in_section
-FROM news
-ORDER BY section, rating_in_section;
-
-```
-
-<br>
-
-# Select first row from every group
-## CTE version
+# Examples
+## Case: get first row from every group
+### CTE version
 ```sql
 WITH summary AS (
     SELECT  id, 
@@ -307,7 +360,7 @@ SELECT s.*
 
 <br>
 
-## Subquery version
+### Subquery version
 ```sql
 SELECT s.* FROM (
     SELECT  id, 
@@ -321,8 +374,8 @@ WHERE s.rk = 1;
 
 <br>
 
-# TOP N
-## Preparations
+## Case: get top N
+### Preparation
 ```sql
 DROP TABLE logs;
 CREATE TABLE logs (uri VARCHAR(255) NOT NULL, src_ip INET NOT NULL);
@@ -384,8 +437,8 @@ Access method: heap
 
 <br>
 
-## Select TOP 2 src_ip per TOP 5 uri
-### CTE
+### Select TOP 2 src_ip per TOP 5 uri
+#### CTE
 ```sql
 WITH
     top_N_uri AS(
@@ -428,7 +481,7 @@ WITH
 
 <br>
 
-### Subqueries
+#### Subqueries
 ```sql
 SELECT t.uri, t.src_ip FROM (
     SELECT t2.*, ROW_NUMBER() OVER (PARTITION BY uri ORDER BY t2.uri, t2.ip_num DESC, t2.src_ip) AS row_number
@@ -452,8 +505,10 @@ WHERE t.row_number <= 2;
 
 
 
+<br>
 
-# Example
+## Case: get sales per country + city
+### Preparation
 ```sql
 DROP function IF EXISTS random_between;
 
@@ -1564,4 +1619,11 @@ VALUES
     ('apple', 'Russia', 'Tomsk', random_between(10,1000), '06.25.2025 14:00'::timestamptz),
     ('apple', 'Russia', 'Tomsk', random_between(10,1000), '06.25.2025 18:00'::timestamptz)
 ;
+```
+
+<br>
+
+### Select
+```sql
+SELECT *, sum(price) OVER (PARTITION BY extract(month FROM date) ORDER BY country,city,fruit) AS sum_price FROM sales LIMIT 605;
 ```
