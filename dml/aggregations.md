@@ -139,8 +139,7 @@ There 2 variant of syntax:
 ```sql
 SELECT <func_name>(<column>) [ FILTER ( WHERE filter_clause ) ] OVER ( window_definition ) AS t
 ```
-- the `OVER` clause **references** to *existing name of window*:
-*window* is **directly** defined in list of columns:
+- the `OVER` clause **references to** *existing name of window*:
 ```sql
 SELECT <func_name>(<column>) [ FILTER ( WHERE filter_clause ) ] OVER window_name AS t
 FROM foo
