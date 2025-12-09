@@ -131,10 +131,7 @@ SELECT * FROM sales LIMIT 8;
 
 Consider we need to use **multiple grouping sets** (in other words, **multiple** `GROUP BY`) in one query: **by country** and **by country, city**. How to solve this task?<br>
 
-Grouping data on column “A” will require one query.<br>
-
-
-The **first way** is to use **independent** queries and then **union** them all:
+The **first way** is to use **independent** queries for each *grouping set* and then **union** them all:
 ```sql
 SELECT country, NULL AS city, sum(price) FROM sales GROUP BY country
 UNION
