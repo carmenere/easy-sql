@@ -2,10 +2,13 @@
 <!-- TOC -->
 - [Table of contents](#table-of-contents)
 - [GROUP BY](#group-by)
+  - [GROUPING SETS, ROLLUP, CUBE](#grouping-sets-rollup-cube)
 - [HAVING](#having)
 - [Aggregate functions](#aggregate-functions)
 - [Window functions](#window-functions)
+  - [`OVER` clause](#over-clause)
   - [Window frame](#window-frame)
+  - [Defaults](#defaults)
   - [Types of window functions](#types-of-window-functions)
   - [Examples](#examples)
     - [Example](#example)
@@ -65,6 +68,14 @@ ORDER BY
 
 <br>
 
+## GROUPING SETS, ROLLUP, CUBE
+It is possible to perform multiple `GROUP BY` in one query without `UNION`:
+- `GROUP BY GROUPING SETS(c.country_id, p.city_id);`
+- `GROUP BY CUBE(p.payment_type_id, c.country_id, p.city_id);`
+- `GROUP BY ROLLUP(p.payment_type_id, c.country_id, p.city_id);`
+
+<br>
+
 # HAVING
 The `HAVING` clause is processed **after** the `GROUP BY` clause, so you **cannot** refer to the **aggregate function** specified in the SELECT list by using the column alias.<br>
 
@@ -106,54 +117,57 @@ HAVING
 **Aggregate functions** perform calculations on a **set of rows** (**groups of data**) and return a **single summary value**.<br>
 *Aggregate functions* are combined with the `GROUP BY` clause to perform calculations on specific groups of data.<br>
 
+All aggregate functions **ignore** `NULL` values.<br>
+
 For **each group**, you can apply an **aggregate function**: 
 - `sum(col)` calculates the **sum of values** in column `col` **per** the group;
-- `count(col)` calculates the **number of items** in column `col` **per** the group;
+- `count(col)` calculates the **number of items** in column `col` **per** the group, **excludes** `NULL` values;
+- `count(*)` **includes** `NULL` values;
 - `min(col)` finds **max value** in column `col` **per** the group;
 - `max(col)` finds **min value** in column `col` **per** the group;
 - `avg(col)` calculates the **average of values** in column `col` **per** the group;
 
 <br>
 
-> **Note**:<br>
-> All aggregate functions **ignore** `NULL` values.
-> `count(*)` **takes into account** `NULL` values.
-> Aggregate functions can be applied **only** to **unique** values: `SELECT avg(DISTINCT price)`.
-
-<br>
-
 # Window functions
+## `OVER` clause
 Every *function* `func(col_1)` followed by `OVER ( PARTITION BY ... ORDER BY ... )` clause becomes **window function**.<br>
 Unlike *aggregate functions* that **collapse rows** into a single result, **window functions** return a value **for each row** in the result set.<br>
 
-**Syntax** of *window functions*:
+There 2 variant of syntax:
+- `window_definition` is **directly** specified inside `OVER` clause:
 ```sql
-SELECT <window_func>(<table_field>)
-OVER (
-      [PARTITION BY <partition_columns>]
-      [ORDER BY <sort_columns>]
-      [ROWS|RANGE <window_frame_definition>]
-)
+SELECT <func_name>(<column>) [ FILTER ( WHERE filter_clause ) ] OVER ( window_definition ) AS t
+```
+- the `OVER` clause **references** to *existing name of window*:
+*window* is **directly** defined in list of columns:
+```sql
+SELECT <func_name>(<column>) [ FILTER ( WHERE filter_clause ) ] OVER window_name AS t
+FROM foo
+WINDOW window_name AS ( window_definition )
 ```
 
-The `OVER()`clause is used to define the **window**.<br>
-A **window** is a **group of rows** that will be passed to the **window function**. The **window functions** are **applied** to **window**.<br>
-**Empty** `OVER ()` means that **window** is the **whole resulting rows**.<br>
+where **window_definition** has the syntax:
+```sql
+[PARTITION BY <partition_columns>]
+[ORDER BY <sort_columns>]
+[ frame_clause ]
+```
 
 <br>
 
-There 2 variant of syntax:
-- *window* is **directly** defined in list of columns:
+**Examples**:
+- `window_definition` is **directly** specified inside `OVER` clause:
 ```sql
-SELECT window_func(col_1) OVER ( PARTITION BY col_2 ORDER BY col_3 ) AS t
+SELECT func_name(col_1) OVER ( PARTITION BY col_2 ORDER BY col_3 DESC NULLS FIRST ) AS t
 ORDER BY col_7;
 ```
-- **reference** to *window defenition* `SELECT .. FROM .. WINDOW win AS (...) ...`:
+- the `OVER` clause **references** to *existing name of window*:
 ```sql
 SELECT
-    window_func(col_1) OVER win AS t1,
-    window_func(col_2) OVER win AS t2,
-    window_func(col_3) OVER win AS t3
+    func_name(col_1) OVER win AS t1,
+    func_name(col_2) OVER win AS t2,
+    func_name(col_3) OVER win AS t3
 FROM foo
 WINDOW win AS ( PARTITION BY col_4 ORDER BY col_5 )
 ORDER BY col_9;
@@ -161,124 +175,163 @@ ORDER BY col_9;
 
 <br>
 
-**Example**:
-```sql
-SELECT
-    id,
-    section,
-    header,
-    score,
-    row_number() OVER (PARTITION BY section ORDER BY score DESC)  AS rating_in_section
-FROM news
-ORDER BY section, rating_in_section;
-```
+The `OVER()`clause is used to define the **window frame** (aka **frame**, **window**).<br>
+A **window frame** is a **group of rows** that will be passed to the **window function**. The **window function** is **applied** to **window frame**.<br>
+**Empty** `OVER ()` means that **window frame** is the **whole result**.<br>
 
 <br>
 
-The `OVER` clause has 3 **optional** clauses to **customize** the **window**:
+The `OVER` clause has 3 **optional** subclauses to **customize** the **window**:
 - `PARTITION BY <partition_columns>`
   - **divides** the *resulting rows* into **non-overlapping** subsets of rows (aka **partitions**);
   - each **partition** contains only rows with the **same** values in **all** columns, specified in `PARTITION BY`;
   - **window functions** are applied **separately** to each partition, as if each were a **separate** data set;
-  - if you **omit** the `PARTITION BY` clause, the **window function** will treat the **whole result** set as a **single partition**;
+  - if you **omit** the `PARTITION BY` clause, the **window function** will treat the **whole result** as a **single partition**;
 - `ORDER BY <sort_columns>`
   - **sorts** rows in **each** partition **independently**;
   - the `ORDER BY` clause uses the `NULLS FIRST` or `NULLS LAST` option to specify whether **nullable** values should be **first** or **last** in the result set;
   - the **default** is `NULLS LAST` option;
-- `ROWS|RANGE <window_frame_definition>`
-  - defines how rows are included into **window frame**;
-  - in other words, this parameter defines how many rows to include **before** and **after** the **current row** in the **window frame**;
-  - the **window frame** can **change** from row to row;
+- `frame_clause`
+  - it defines how many rows to include **before** and **after** the **current row** in the **window frame**;
 
 <br>
 
-**Example**. Consider table `(name, age)`, then `PARTITION BY age` divides all rows of *result set* into **partitions** where **all rows inside partiton** have the **same value** in column `age`:
-- **partition 1** (`age` = **30**):
-```
+**Example**<br>
+![win_funcs_partition](/img/win_funcs_partition.png)
 
-| a    |  30 |
-| a    |  30 |
-| b    |  30 |
-| b    |  30 |
-| c    |  30 |
-| c    |  30 |
-```
-- **partition 2** (`age` = **25**):
-```
-| a    |  25 |
-| a    |  25 |
-| b    |  25 |
-| b    |  25 |
-| c    |  25 |
-| c    |  25 |
-```
+In the above image the `PARTITION BY country` divides all rows of *result set* into 2 **partitions** where all rows inside partiton have the **same value** in column `country`:
+- all rows with `country = RUS` form **partition 1**;
+- all rows with `country = ITA` form **partition 2**;
 
 <br>
 
 ## Window frame
 A **window frame** is a **subset** of rows in the **current partition** that are somehow **related** to the **current row**.<br>
-The **window frame** is evaluated **separately** within each partition. 
-In other words, a **window frame** refines which rows within that partition are included in the calculation.<br>
-A **window frame** is always bound to **current row**.<br>
-The **window frame** can **change** from row to row.<br>
+A *window frame* is always bound to **current row**.<br>
+The *window frame* is evaluated **separately** within each partition.<br>
+In other words, a *window frame* refines which rows within that partition are included in the calculation.<br>
 
-A `<window_frame_definition>` in `ROWS|RANGE <window_frame_definition>` is specified as `BETWEEN <lower_bound> AND <upper_bound>`:
-- where the `lower_bound` of **window frame** can be:
-  - `UNBOUNDED PRECEDING`: **all** rows **before** the *current row*;
-  - `n PRECEDING`: **n** rows **before** the *current row*;
-  - `CURRENT ROW`: **just** the *current row*;
-- where thw `upper_bound` of **window frame** can be:
-  - `CURRENT ROW`: **just** the *current row*;
-  - `n FOLLOWING`: **n** rows **after** the *current row*;
-  - `UNBOUNDED FOLLOWING`: **all** rows **after** the *current row*;
+A **peer group** contains all **consecutive rows** (aka **peer rows**) with the exact same value in **all** columns specified in `ORDER BY` clause (aka **sorting columns**).
 
 <br>
 
-**Full syntax examples**:
+A **frame clause** (aka **window frame definition**) syntax:
+```sql
+mode BETWEEN frame_start AND frame_end [ frame_exclusion ]
+```
+- the **mode** can be one of:
+  - `ROWS`
+  - `RANGE`
+  - `GROUPS`
+- the **frame_start** and **frame_end** can be one of:
+  - `UNBOUNDED PRECEDING`: means that the frame **starts** with the **first row** of the partition;
+  - `offset PRECEDING`: the *behaviour* depends on **mode**;
+  - `CURRENT ROW`: the *behaviour* depends on **mode**;
+  - `offset FOLLOWING`: the *behaviour* depends on **mode**;
+  - `UNBOUNDED FOLLOWING`: means that the frame **ends** with the **last row** of the partition;
+- the **frame_exclusion** can be one of:
+  - `EXCLUDE CURRENT ROW`: *excludes* the current row from the frame;
+  - `EXCLUDE GROUP`: *excludes* the **current row** and **all** its **peers** from the frame;
+  - `EXCLUDE TIES`: *excludes* **any peers** of the current row from the frame, but **not** the current row **itself**;
+  - `EXCLUDE NO OTHERS`: simply specifies explicitly the **default behavior** of **not** excluding the current row or its peers;
+
+<br>
+
+**Restrictions**:
+- `frame_start` **cannot be** `UNBOUNDED FOLLOWING`;
+- `frame_end` **cannot be** `UNBOUNDED PRECEDING`;
+- `frame_end` **cannot** appear **earlier** than `frame_start`;
+  - for example: `RANGE BETWEEN CURRENT ROW AND offset PRECEDING` is **not** allowed;
+
+<br>
+
+**Shorter versions**:
+- it is possible to use **shorter versions** for *window frames definitions*:
+- `mode BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW` is the same as `mode UNBOUNDED PRECEDING`;
+- `mode BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING` is the same as `mode UNBOUNDED FOLLOWING`;
+- `mode BETWEEN offset PRECEDING AND CURRENT ROW` is the same as `mode offset PRECEDING`;
+- `mode BETWEEN CURRENT ROW AND offset FOLLOWING` is the same as `mode offset FOLLOWING`;
+- `mode BETWEEN CURRENT ROW AND CURRENT ROW` is the same as `mode CURRENT ROW`;
+
+<br>
+
+The behaviour of `offset PRECEDING`, `offset FOLLOWING` and `CURRENT ROW` **depends on** *frame mode*:
+- in `ROWS` mode:
+  - - the *window frame* is **precise** and it **cannot** change *from row to row*;
+  - the `CURRENT ROW` is an **exactly one row**;
+  - `offset` must be **non-null**, **non-negative integer** `n` and it means **exactly** `n` *rows* **before** or **after** the *current row*;
+    - for example, `1 PRECEDING` means **exactly one** row **before** the **current** one;
+- in `RANGE` mode:
+  - the *window frame* is **dynamic** and it **can** change *from row to row*;
+  - the `CURRENT ROW` is **not** just a *current row*, instead it is a **peer group** (*current row* and **all** its *peer rows*);
+  - a **peer group** is **included entirely** in the *frame*;
+  - these options require that the `ORDER BY` clause specify **exactly one column**;
+  - the `offset` specifies the **maximum difference** between the value in the column specified in `ORDER BY` of the *current row* and all rows **before** or **after** the *current row*;
+    - the `n PRECEDING` includes **group of all rows** where values are in the **range** `[value_in_current_row - n, value_in_current_row]`;
+    - the `n FOLLOWING` includes **group of all rows** where values are in the **range** `[value_in_current_row, value_in_current_row + n]`;
+- in `GROUPS` mode:
+  - the *window frame* is **dynamic** and it **can** change *from row to row*;
+  - the `CURRENT ROW` is **not** just a *current row*, instead it is a **peer group** (*current row* and **all** its *peer rows*);
+  - a **peer group** is **included entirely** in the *frame*;
+  - `offset` must be **non-null**, **non-negative integer** `n` and it means **exactly** `n` **different** *groups of rows with the sme values* **before** or **after** the *current group*;
+    - `n PRECEDING` includes `n` **groups of rows** with the same values in the column specified in`ORDER BY` **before** *current group*;
+    - `n FOLLOWING` includes `n` **groups of rows** with the same values in the column specified in`ORDER BY` **after** *current group*;
+
+<br>
+
+The `ROWS` mode:<br>
+![win_funcs_rows_range_groups](/img/win_funcs_rows_range_groups_rows.png)
+
+<br>
+
+The `RANGE` mode:<br>
+![win_funcs_rows_range_groups](/img/win_funcs_rows_range_groups_range.png)
+
+<br>
+
+The `GROUPS` mode:<br>
+![win_funcs_rows_range_groups](/img/win_funcs_rows_range_groups_groups.png)
+
+<br>
+
+## Defaults
+**Defaults**:
+- if `mode` is **omitted**, the **default** is `RANGE`;
+- if `frame_start` is **omitted**, the **default** is `UNBOUNDED PRECEDING`;
+- if `frame_end` is **omitted**, the **default** is `CURRENT ROW`;
+- if `PARTITION BY` is **omitted**, then **whole result** is a **single partition**;
+- if `ORDER BY` is **omitted**, then **all rows in current partition** are **peers** of **current row**;
+- `RANGE`, not `ROWS` (**current row** includes all peers);
+
+<br>
+
+Bringing it all together, the **default** *window frame definition*:
 ```sql
 RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
 ```
-
+or **shorter version**:
 ```sql
-ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+RANGE UNBOUNDED PRECEDING
 ```
 
 <br>
 
-Possible **window frames definitions**:
-- `UNBOUNDED PRECEDING` is the same as `BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW`;
-- `UNBOUNDED FOLLOWING` is the same as `BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING`;
-- `n PRECEDING` is the same as `BETWEEN n PRECEDING AND CURRENT ROW`, **n** is an integer value;
-- `n FOLLOWING` is the same as `BETWEEN CURRENT ROW AND n FOLLOWING`, **n** is an integer value;
+The **default** *window frame* also depends on `ORDER BY`:
+- **with** `ORDER BY`, the **default frame** is `RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW` (or *shorter version* `RANGE UNBOUNDED PRECEDING`);
+  - in `RANGE` **mode** the `CURRENT ROW` means **not** only actually current row, instead the `CURRENT ROW` is a **set of all peer rows**;
+  - a **peer row** is a row that has **equivalent** values in **all** columns specified in `ORDER BY` clause (aka **sorting criteria**) to the **current row**;
+- **without** `ORDER BY` **all** rows of the *partition* are included in the *window frame*, since **all** rows become *peers* of the *current row*;
+  - it is **equal to** `ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING`;
+
+<br>
+
+**Default** *window frames* in **different** modes:<br>
+![win_funcs_default_window_frames](/img/win_funcs_default_window_frames.png)
 
 <br>
 
 Examples of **window frames definitions**:
 ![window_frame_definitions](/img/window_frame_definitions.png)
-
-<br>
-
-The `ROWS` and `RANGE` work differently:
-- `ROWS`
-  - in `ROWS` **mode**, `CURRENT ROW` is actually the **current row**;
-  - it defines **window frames** based on the **physical position** of rows relative to the **current row**;
-    - for example, `1 PRECEDING` means **one** row **before** the **current** one;
-  - it makes **precise frame**;
-- `RANGE`
-  - in `RANGE` **mode** the `CURRENT ROW` means **not** only actually current row, instead the `CURRENT ROW` is a **set of all peer rows**;
-  - a **peer row** is a row that has **equivalent** values in **all** columns specified in `ORDER BY` clause (aka **sorting columns**) to the **current row**;
-  - it defines **window frames** based on **values of** `<sort_columns>` of `ORDER BY`;
-  - it makes **dynamic frames**, i.e. frames defined with `RANGE` can vary depending on the data;
-
-<br>
-
-The **default** *window frame* definition depends on `ORDER BY`:
-- **with** `ORDER BY`, the **default frame** is `RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW` (or shorter version `RANGE UNBOUNDED PRECEDING`);
-  - in `RANGE` **mode** the `CURRENT ROW` means **not** only actually current row, instead the `CURRENT ROW` is a **set of all peer rows**;
-  - a **peer row** is a row that has **equivalent** values in **all** columns specified in `ORDER BY` clause (aka **sorting criteria**) to the **current row**;
-- **without** `ORDER BY`, the **default frame** is `ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING`;
-  - this means **all** rows of the *partition* are included in the *window frame*, since **all** rows become *peers* of the *current row*;
-- in `ROWS` **mode**, `CURRENT ROW` is actually the **current row**;
 
 <br>
 
