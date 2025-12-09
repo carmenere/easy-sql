@@ -161,7 +161,7 @@ To make it more efficient, PostgreSQL provides **3 subclauses** of the `GROUP BY
 <br>
 
 The `GROUPING SETS`, `CUBE` and `ROLLUP` all allow you to define **multiple grouping sets** in the same query.<br>
-The `ROLLUP` and `CUBE` are a **short varsion** for some multiple grouping sets combinations (more detail below).<br>
+The `ROLLUP` and `CUBE` are a **short varsion** for some multiple grouping sets combinations (more details below).<br>
 
 <br>
 
@@ -175,7 +175,9 @@ GROUP BY `GROUPING SETS` (
 )
 ```
 
-In this syntax, we have **4 grouping sets**: `(c1,c2)`, `(c1)`, `(c2)`, and `()`.<br>
+In this syntax, we have **4 grouping sets**: `(c1,c2)`, `(c1)`, `(c2)`, and **empty** `()`.<br>
+
+<br>
 
 **Examples**:
 ```sql
