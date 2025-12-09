@@ -2,8 +2,12 @@
 <!-- TOC -->
 - [Table of contents](#table-of-contents)
 - [GROUP BY](#group-by)
-  - [GROUPING SETS, ROLLUP, CUBE](#grouping-sets-rollup-cube)
 - [HAVING](#having)
+- [Grouping sets, rollup and cube](#grouping-sets-rollup-and-cube)
+  - [`GROUPING SETS`](#grouping-sets)
+  - [`ROLLUP`](#rollup)
+  - [`CUBE`](#cube)
+  - [`GROUPING()` function](#grouping-function)
 - [Aggregate functions](#aggregate-functions)
 - [Window functions](#window-functions)
   - [`OVER` clause](#over-clause)
@@ -68,14 +72,6 @@ ORDER BY
 
 <br>
 
-## GROUPING SETS, ROLLUP, CUBE
-It is possible to perform multiple `GROUP BY` in one query without `UNION`:
-- `GROUP BY GROUPING SETS(c.country_id, p.city_id);`
-- `GROUP BY CUBE(p.payment_type_id, c.country_id, p.city_id);`
-- `GROUP BY ROLLUP(p.payment_type_id, c.country_id, p.city_id);`
-
-<br>
-
 # HAVING
 The `HAVING` clause is processed **after** the `GROUP BY` clause, so you **cannot** refer to the **aggregate function** specified in the SELECT list by using the column alias.<br>
 
@@ -110,6 +106,276 @@ GROUP BY
 HAVING
     aggregate_function (column_name3) > value;
 ```
+
+<br>
+
+# Grouping sets, rollup and cube
+## `GROUPING SETS`
+Consider table:
+```sql
+SELECT * FROM sales LIMIT 8;
+ fruit | country | city | wieght | price |          date
+-------+---------+------+--------+-------+------------------------
+ apple | Italy   | Rome |        |   757 | 2025-01-01 14:00:00+03
+ apple | Italy   | Rome |        |   928 | 2025-01-01 18:00:00+03
+ apple | Italy   | Rome |        |   153 | 2025-01-05 14:00:00+03
+ apple | Italy   | Rome |        |   723 | 2025-01-05 18:00:00+03
+ apple | Italy   | Rome |        |   560 | 2025-01-10 14:00:00+03
+ apple | Italy   | Rome |        |   211 | 2025-01-10 18:00:00+03
+ apple | Italy   | Rome |        |   466 | 2025-01-15 14:00:00+03
+ apple | Italy   | Rome |        |   990 | 2025-01-15 18:00:00+03
+(8 rows)
+```
+
+<br>
+
+Consider we need to use **multiple grouping sets** (in other words, **multiple** `GROUP BY`) in one query: **by country** and **by country, city**. How to solve this task?<br>
+
+Grouping data on column “A” will require one query.<br>
+
+
+The **first way** is to use **independent** queries and then **union** them all:
+```sql
+SELECT country, NULL AS city, sum(price) FROM sales GROUP BY country
+UNION
+SELECT country, city, sum(price) FROM sales GROUP BY country, city ORDER BY country;
+ country |   city    |  sum
+---------+-----------+--------
+ Italy   | Milano    |  99602
+ Italy   | Rome      | 110901
+ Italy   | Turin     | 100092
+ Italy   |           | 310595
+ Russia  | Krasnodar |  71096
+ Russia  | Moscow    |  71046
+ Russia  | Tomsk     |  67271
+ Russia  |           | 209413
+(8 rows)
+```
+
+<br>
+
+This aproach has a **performance issue** because PostgreSQL has to scan the `sales` table **separately** for **each query** in `UNION` chain.<br>
+
+To make it more efficient, PostgreSQL provides **3 subclauses** of the `GROUP BY` clause, they all allow to perform **multiple** `GROUP BY` in one query without `UNION`:
+- `GROUP BY GROUPING SETS ( (col_10, col_11, ...), (col_20, col_21, ... ), ... );`
+- `GROUP BY CUBE (col_10, col_11, ...);`
+- `GROUP BY ROLLUP (col_10, col_11, ...);`
+
+<br>
+
+The `GROUPING SETS`, `CUBE` and `ROLLUP` all allow you to define **multiple grouping sets** in the same query.<br>
+The `ROLLUP` and `CUBE` are a **short varsion** for some multiple grouping sets combinations (more detail below).<br>
+
+<br>
+
+The **general syntax** of the `GROUPING SETS` is as follows:
+```sql
+GROUP BY `GROUPING SETS` (
+    (c1, c2),
+    (c1),
+    (c2),
+    ()
+)
+```
+
+In this syntax, we have **4 grouping sets**: `(c1,c2)`, `(c1)`, `(c2)`, and `()`.<br>
+
+**Examples**:
+```sql
+SELECT country, city, sum(price) FROM sales GROUP BY GROUPING SETS ( (country, city), (city) ) ORDER BY country,city;
+ country |   city    |  sum
+---------+-----------+--------
+ Italy   | Milano    |  99602
+ Italy   | Rome      | 110901
+ Italy   | Turin     | 100092
+ Russia  | Krasnodar |  71096
+ Russia  | Moscow    |  71046
+ Russia  | Tomsk     |  67271
+         | Krasnodar |  71096
+         | Milano    |  99602
+         | Moscow    |  71046
+         | Rome      | 110901
+         | Tomsk     |  67271
+         | Turin     | 100092
+(12 rows)
+```
+
+```sql
+SELECT country, city, sum(price) FROM sales GROUP BY GROUPING SETS ( (country, city), (country) ) ORDER BY country,city;
+ country |   city    |  sum
+---------+-----------+--------
+ Italy   | Milano    |  99602
+ Italy   | Rome      | 110901
+ Italy   | Turin     | 100092
+ Italy   |           | 310595
+ Russia  | Krasnodar |  71096
+ Russia  | Moscow    |  71046
+ Russia  | Tomsk     |  67271
+ Russia  |           | 209413
+(8 rows)
+```
+
+<br>
+
+This syntax also **acceptable**: `GROUP BY GROUPING SETS (c1, c2)` and it is **equal to** `GROUPING SETS ( (c1), (c2) )`.<br>
+
+<br>
+
+**Examples** `( (country), (city) )` and `( country, city )` are **equal**:
+```sql
+SELECT country, city, sum(price) FROM sales GROUP BY GROUPING SETS ( (country), (city) );
+ country |   city    |  sum
+---------+-----------+--------
+ Russia  |           | 209413
+ Italy   |           | 310595
+         | Krasnodar |  71096
+         | Milano    |  99602
+         | Tomsk     |  67271
+         | Moscow    |  71046
+         | Turin     | 100092
+         | Rome      | 110901
+(8 rows)
+```
+
+```sql
+SELECT country, city, sum(price) FROM sales GROUP BY GROUPING SETS ( country, city );
+ country |   city    |  sum
+---------+-----------+--------
+ Russia  |           | 209413
+ Italy   |           | 310595
+         | Krasnodar |  71096
+         | Milano    |  99602
+         | Tomsk     |  67271
+         | Moscow    |  71046
+         | Turin     | 100092
+         | Rome      | 110901
+(8 rows)
+```
+
+<br>
+
+## `ROLLUP`
+The `ROLLUP(c1,c2,c3)` generates **4** *grouping sets*, assuming the hierarchy `c1 > c2 > c3` and it is **equal to**:
+```sql
+GROUP BY GROUPING SETS (
+    (c1, c2, c3)
+    (c1, c2)
+    (c1)
+    ()
+)
+```
+
+<br>
+
+**Example**:
+```sql
+SELECT country, city, sum(price) FROM sales GROUP BY ROLLUP (country, city) ORDER BY country,city;
+ country |   city    |  sum
+---------+-----------+--------
+ Italy   | Milano    |  99602
+ Italy   | Rome      | 110901
+ Italy   | Turin     | 100092
+ Italy   |           | 310595
+ Russia  | Krasnodar |  71096
+ Russia  | Moscow    |  71046
+ Russia  | Tomsk     |  67271
+ Russia  |           | 209413
+         |           | 520008
+(9 rows)
+```
+
+<br>
+
+## `CUBE`
+The `CUBE` generates **power of a set** for *grouping set* passed to `CUBE`. The **power of a set** inludes:
+- *all possible subsets* of the original *grouping set*;
+- the *empty set*;
+- the original *grouping set* itself;
+
+<br>
+
+If the number of columns specified in the `CUBE` is $n$, then you will have $2^n$ **combinations**.<br>
+
+<br>
+
+The `CUBE(c1,c2,c3)` generates **8** *grouping sets* and it is **equal to**:
+```sql
+GROUP BY GROUPING SETS (
+    (c1,c2,c3),
+    (c1,c2),
+    (c1,c3),
+    (c2,c3),
+    (c1),
+    (c2),
+    (c3),
+    ()
+)
+```
+
+<br>
+
+**Example**:
+```sql
+SELECT grouping(country) AS g_country, grouping(city) AS g_city, country, city, sum(price)
+FROM sales 
+GROUP BY CUBE (country, city)
+ORDER BY g_country,g_city;
+ g_country | g_city | country |   city    |  sum
+-----------+--------+---------+-----------+--------
+         0 |      0 | Russia  | Krasnodar |  71096
+         0 |      0 | Italy   | Milano    |  99602
+         0 |      0 | Russia  | Tomsk     |  67271
+         0 |      0 | Russia  | Moscow    |  71046
+         0 |      0 | Italy   | Rome      | 110901
+         0 |      0 | Italy   | Turin     | 100092
+         0 |      1 | Russia  |           | 209413
+         0 |      1 | Italy   |           | 310595
+         1 |      0 |         | Rome      | 110901
+         1 |      0 |         | Krasnodar |  71096
+         1 |      0 |         | Milano    |  99602
+         1 |      0 |         | Tomsk     |  67271
+         1 |      0 |         | Moscow    |  71046
+         1 |      0 |         | Turin     | 100092
+         1 |      1 |         |           | 520008
+(15 rows)
+```
+
+The **last row** `| 1 | 1 |   |   | 520008 |` is for **empty set** `()`.<br>
+
+<br>
+
+## `GROUPING()` function
+The `GROUPING()` function accepts **list** of column names which must be specified in the `GROUP BY` clause.<br>
+The `GROUPING(col_1, ..., col_i, ..., col_n)` function returns bit **0** in **i** position if the **i**th column is a **member** of the *grouping set* and **1** otherwise.<br>
+The `GROUPING(col_1)` function returns bit **0** if the column `col_1` is a **member** of the *grouping set* and **1** otherwise.<br>
+
+So,
+- if `col_X` contains `NULL` and `GROUPING(col_X)` function returns bit **0** it means that column `col_X` really contain `NULL` value in the table and this column is a **member** of the *grouping set*;
+- if `col_X` contains `NULL` and `GROUPING(col_X)` function returns bit **1** it means that column `col_X` **doesn't** really contain `NULL` and the `NULL` value is **placeholder** for column that **isn't** member of *grouping set*;
+
+<br>
+
+**Example**:
+```sql
+SELECT grouping(country) AS g_country, grouping(city) AS g_city, country, city, sum(price) 
+FROM sales
+GROUP BY ROLLUP (country, city) ORDER BY country,city;
+
+ g_country | g_city | country |   city    |  sum
+-----------+--------+---------+-----------+--------
+         0 |      0 | Italy   | Milano    |  99602
+         0 |      0 | Italy   | Rome      | 110901
+         0 |      0 | Italy   | Turin     | 100092
+         0 |      1 | Italy   |           | 310595
+         0 |      0 | Russia  | Krasnodar |  71096
+         0 |      0 | Russia  | Moscow    |  71046
+         0 |      0 | Russia  | Tomsk     |  67271
+         0 |      1 | Russia  |           | 209413
+         1 |      1 |         |           | 520008
+(9 rows)
+```
+
+The **last row** `| 1 | 1 |   |   | 520008 |` is for **empty set** `()`.<br>
 
 <br>
 
