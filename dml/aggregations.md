@@ -349,7 +349,7 @@ The `GROUPING(col_1, ..., col_i, ..., col_n)` function returns bit **0** in **i*
 The `GROUPING(col_1)` function returns bit **0** if the column `col_1` is a **member** of the *grouping set* and **1** otherwise.<br>
 
 So,
-- if `col_X` contains `NULL` and `GROUPING(col_X)` function returns bit **0** it means that column `col_X` really contain `NULL` value in the table and this column is a **member** of the *grouping set*;
+- if `col_X` contains `NULL` and `GROUPING(col_X)` function returns bit **0** it means that column `col_X` **really** contain `NULL` value in the table and this column is a **member** of the *grouping set*;
 - if `col_X` contains `NULL` and `GROUPING(col_X)` function returns bit **1** it means that column `col_X` **doesn't** really contain `NULL` and the `NULL` value is **placeholder** for column that **isn't** member of *grouping set*;
 
 <br>
