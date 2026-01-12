@@ -92,7 +92,8 @@ SELECT * FROM foo, LATERAL (SELECT * FROM bar WHERE bar.id = foo.bar_id) t;
 <br>
 
 ## LATERAL JOIN
-The difference between a **non-lateral** and a **lateral** `JOIN` lies in whether you can look to the **left hand** table's row.
+The `LATERAL` join is a type of join that **allows** a **subquery to reference columns from preceding** tables in the `FROM` clause of a SQL query. This means **the subquery can refer to the rows from previous tables** when generating its results.<br>
+
 A `LATERAL` join is more **like** a **correlated subquery**, but, **correlated subquery** can only return a **single** value, **not** multiple columns and not multiple rows.<br>
 
 <br>
