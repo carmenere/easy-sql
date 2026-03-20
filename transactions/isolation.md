@@ -194,7 +194,7 @@ As a result, the first transaction **gets two different sets of rows**.<br>
 **Scenario 1**:
 1. Transaction `T1` **reads** `x`.
 2. Transaction `T2` **updates** `x` and `y` to new values and `COMMIT`.
-3. Then `T1` reads `y` and it **doesn't eread** `x`, i.e. it holds **previous** value of `x`.
+3. Then `T1` reads `y` and it **doesn't reread** `x`, i.e. it holds **previous** value of `x`.
 4. As a result, `T1` may produce an **inconsistent state** as output: if there were a **constraint** between `x` and `y`, it might be **violated**, for example **overall sum**. 
 
 <br>
@@ -249,46 +249,7 @@ So, **Repeateable read** cannot recognize such anomaly.<br>
 <br>
 
 ### Write Skew: example
-1. Consider table of doctors and business **requirement** that **at least one** of doctor can be on call (on duty).
-2. Consider that there are 2 doctors that are is on duty:
-```sql
-example=# select * from doctors ;
- name  | on_call
--------+---------
- Alice | t
- Bob   | t
-(2 rows)
-```
-3. Consider they decide to cancel their shifts simultaneously.
-3.1. Alice transaction:
-```sql
-BEGIN TRANSACTION;
-DO $$ BEGIN
-  IF (SELECT COUNT(*) FROM doctors WHERE on_call = true) >= 1 THEN
-    UPDATE doctors SET on_call = false WHERE name = 'Alice';
-  END IF;
-END $$;
-COMMIT; 
-```
-3.2. Bob transaction:
-```sql
-BEGIN TRANSACTION;
-DO $$ BEGIN
-  IF (SELECT COUNT(*) FROM doctors WHERE on_call = true) >= 1 THEN
-    UPDATE doctors SET on_call = false WHERE name = 'Bob';
-  END IF;
-END $$;
-COMMIT; 
-```
-4. After both transaction has commited there are will **no doctor on duty** and **constraint will be violated**:
-```sql
-example=# select * from doctors ;
- name  | on_call
--------+---------
- Bob   | f
- Alice | f
-(2 rows)
-```
+
 
 <br>
 
