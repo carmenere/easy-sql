@@ -5,7 +5,8 @@
 - [Coherence vs. Consistency](#coherence-vs-consistency)
 - [Consistency](#consistency)
   - [Consistency models](#consistency-models)
-- [Linearizability vs Serializability](#linearizability-vs-serializability)
+  - [Linearizability](#linearizability)
+  - [CAP Theorem](#cap-theorem)
 <!-- TOC -->
 
 <br>
@@ -66,49 +67,85 @@ One *consistency model* can be considered **stronger** than another if it requir
 <br>
 
 At the top of hierarchy is the **strong serializability** (aka **strict serializability**) *consistency model*.<br>
-**Strong serializability** combines **serializable** *isolation level* and **linearizable** *consistency level*.<br>
 
 <br>
 
-*Consistency models* **under** *strong serializability* are divided into **2 groups**:
-- **isolation levels**;
-- **consistency levels**;
-
-<br>
-
-*Consistency models* **under** *strong serializability*:
-- **isolation levels**:
+All *consistency models* **under** *strong serializability* are divided into **2 groups**:
+- **multi-object** *consistency models*:
   - **read uncommitted**;
   - **read committed**;
   - **repeatable read**;
-  - **serializable**;
-- **consistency levels**:
-  - **linearizable consistency**
-  - **sequential consistency**
-  - **causal consistency**
-  - **eventual consistency**
+  - **serializability**;
+- **single-object** *consistency models*:
+  - **linearizability** (aka **strong consistency**);
+    - *every operation* takes place **atomically**, **in some order**, according the **real-time ordering**;
+  - **sequential consistency**, it is a **weaker** than *linearizability*;
+    - it is a **relaxed model** compared to linearizability because it **doesn't care** about the **real time** of the events while ordering them;
+  - **causal consistency**, it is a **weaker** than *sequential consistency*;
+    - it requires that **casually related writes** must be seen in the **same order** by **all nodes** in the distributed system;
+  - **eventual consistency**, it is a **weak** *consistency model*;
+    - it defines that if **no** update takes a very long time, **all replicas** *eventually become consistent*;
 
 <br>
 
-# Linearizability vs Serializability
-**Linearizability** is a **guarantee** about *single operations* on *single objects*.<br>
-**Serializability** is a **guarantee** about *transactions* (*groups of one or more operations*) over *multiple objects* (*one or more objects*).<br>
-
-*Linearizability* for read and write operations refers to the **C** or **consistency** in the **CAP theorem**.<br>
-
-It **guarantees** that the execution of *multiple concurrent* (happening at the same time) *transactions* over *multiple objects* is **equivalent to some serial execution** (total ordering) of the transactions.<br>
-
-In other words **serializability** ensures that these transactions play out as if they happened **one after another**, **not all at once**.
-This doesn't mean they physically occur one by one - they can still happen all at once. But the **final result** *will be the same as if they happened sequentially*.<br>
-*Serializability* refers to the **I** or **isolation**, in **ACID**.<br>
+**Strong serializability** isthe **strongest** *consistency model*, it combines **serializability** and **linearizability**. **Linearizability** is often confused with **serializability** - another consistency model.<br>
 
 <br>
 
-- **linearizability** is one of the **strongest single-object** *consistency model*:
-  - it implies that every operation appears to take place **atomically**, **in some order**, consistent with the real-time ordering of those operations;
-    - e.g., if operation `A` completes **before** operation `B` begins, then `B` must see the result of the `A`;
-- the **sequential consistency** is a **weaker** model than *linearizability*;
-- the **causal consistency** is a **weaker** model than *sequential consistency model*;
-- the **eventual consistency** is a **weak** *consistency model*. It defines that if **no** update takes a very long time, **all replicas** *eventually become consistent*;
+**Linearizability** vs. **Serializability**:
+- **Linearizability** is one of the **strongest single-object** *consistency model*;
+  - in other words, *linearizability* is a **guarantee** about *single operations* on *single objects*;
+- **Serializability** is one of the **strongest multi-object** *consistency model*;
+  - in other words, *serializability* is a **guarantee** about *transactions* (*groups of one or more operations*) over *multiple objects*;
+
+<br>
+
+So, **serializability** is an **isolation property** of transactions, which **guarantees** that even though transactions may execute *concurrently* over *multiple objects*, the **end result** is the **same as** if they had executed **serially**, i.e. *sequentially*, *one after another*, **without** *any concurrency*. *Serializability* refers to the **I** or **isolation**, in **ACID**.<br>
+
+<br>
+
+## Linearizability
+**Linearizability** implies that:
+- *every operation* takes place **atomically**, **in some order**, according the **real-time ordering** (as operations appeared according **real-time clock**);
+  - if *read* operation returns **version 2** of a data (e.g., `x=2`), **all** subsequent *read* operations **must** also return *version >= 2*: (`x=2`) **or** *updates happened afterward*;
+- **result** of each operation must be **propogated instantly** accross entire *distributed system*;
+  - if *write* operation `A` completes **before** *read* operation `B` begins, then `B` **must** see the result of the `A`, in other words *write* must be propogated **instantly** accross all nodes in *distributed system*;
+
+<br>
+
+In a *linearizable system* **all operations** must happen **atomically**  **Linearizability** makes *distributed system* behave like a **single**, **atomic**, **non-distributed** *system*.<br>
+
+In a *linearizable system* every client always sees the **most recent up-to-date value**.<br>
+
+<br>
+
+**Thread-safety** *implies linearizability*.<br>
+
+<br>
+
+Common **approaches** to achieve linearizability:
+- **single-leader replication**;
+  - **all write operations** go to a single, designated **leader node**;
+- **quorum-based consistency** (e.g., *Paxos*, *Raft*);
+  - operations require **agreement from a majority** (**quorum**) of nodes before being considered complete;
+    - for a **write**, a **quorum** of nodes must acknowledge the write;
+    - for a **read**, a **quorum** of nodes must be queried to ensure the latest data is retrieved;
+- **atomic broadcast** (e.g., *Zookeeper’s ZAB*, *Apache Kafka’s Raft*);
+
+<br>
+
+## CAP Theorem
+The **CAP theorem** states that a distributed data store cannot simultaneously provide more than two out of the following three guarantees:
+- **Consistency** (**C**): every request receives the **most recent write** or **an error**;
+- **Availability** (**A**): every request receives a (*non-error*) **response**, **without** the **guarantee** that it contains the *most recent write*;
+- **Partition tolerance** (**P**): the system **continues to operate** despite arbitrary *network failures* (*partitions*) that cause some messages to be dropped or delayed;
+
+<br>
+
+*In practice*, for any interesting distributed system, **P** **is given**. **Network failures will happen**. This means you **must choose between** **C** and **A** **during a network partition**:
+- **linearizable systems** (aka **CP**) **prioritize consistency**. If a **network partition** occurs, the system **might become unavailable to some clients** to ensure all remaining available nodes have a consistent view of the data;
+  - examples: *etcd*, *ZooKeeper*, *distributed databases using Paxos/Raft*;
+- **eventually consistent systems** (aka **AP**): **prioritize availability**. During a **network partition**, the **system remains available**, but **different parts** of the system might have **inconsistent** views of the data. **Consistency** is **eventually achieved** once the partition heals;
+  - examples: *Cassandra*, *DynamoDB*;
 
 <br>
