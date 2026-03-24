@@ -1,3 +1,41 @@
+# Table of contents
+<!-- TOC -->
+- [Table of contents](#table-of-contents)
+- [Lock timeouts](#lock-timeouts)
+- [Locks](#locks)
+  - [Table-level locks](#table-level-locks)
+      - [Example](#example)
+    - [pg\_locks system view](#pg_locks-system-view)
+      - [Example](#example-1)
+  - [Row-level locks](#row-level-locks)
+<!-- TOC -->
+
+<br>
+
+# Lock timeouts
+The `lock_timeout` parameter controls the **maximum time a statement will wait to acquire a lock** on any database object (table, index, row, etc.).<br>
+**By default**, it has `lock_timeout=0` meaning the statement will **wait indefinitely** for a lock unless interrupted manually or by another timeout:
+```sql
+test=# SHOW lock_timeout;
+ lock_timeout
+--------------
+ 0
+(1 row)
+
+Time: 1.267 ms
+```
+
+<br>
+
+To **set** `lock_timeout` parameter there is a command: `SET lock_timeout = <value>`, where `<value>` can be specified with units: e.g., `'2s'`, `'100ms'`:
+```sql
+test=# SET lock_timeout = '2s';
+SET
+Time: 1.289 ms
+```
+
+<br>
+
 # Locks
 [Main article](https://www.postgresql.org/docs/current/explicit-locking.html)<br>
 PostgreSQL provides **various lock modes** to **control concurrent access to data** in tables.<br>
@@ -51,3 +89,5 @@ If **concurrent** transactions modify **the same row**, one of them will **get b
 You can also take `row-level locks` explicitly **without modifying** anything using `SELECT … FOR UPDATE` or `SELECT … FOR SHARE`, which lets you temporarily prevent changes to a set of rows.<br>
 
 For example, the `FOR UPDATE` *lock mode* is also acquired by any `DELETE` on a row, and also by an `UPDATE` that modifies the values of certain columns.<br>
+
+<br>

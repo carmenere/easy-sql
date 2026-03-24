@@ -1,3 +1,13 @@
+# Table of contents
+<!-- TOC -->
+- [Table of contents](#table-of-contents)
+- [Find and show stuck transactions](#find-and-show-stuck-transactions)
+    - [idle\_in\_transaction\_session\_timeout (integer)](#idle_in_transaction_session_timeout-integer)
+    - [idle\_session\_timeout (integer)](#idle_session_timeout-integer)
+<!-- TOC -->
+
+<br>
+
 # Find and show stuck transactions
 - `xact_start` can be `null`
 ```sql
