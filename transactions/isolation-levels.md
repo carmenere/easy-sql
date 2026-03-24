@@ -230,14 +230,12 @@ So, **application** must be ready to handle a **serialization error**, in other 
 <br>
 
 ## Dirty write vs. Lost update
-The difference between **dirty write** and **lost update** is that **uncommitted** data is **overwritten** or **committed** data is **overwritten**:
-- **dirty write** is that a transaction **overwrites** the **uncommitted** data;
-- **lost update** is that **two transactions** read the **same row to update** it but the **first** committed update is **overwritten** by the **second** committed update;
+The difference between **dirty write** and **lost update** is that **uncommitted** data is **overwritten** or **committed** data is **overwritten**.<br>
 
 <br>
 
 ### Dirty write
-The **dirty write** anomaly occurs when a transaction **overwrites uncommitted changes** made by another transaction.<br>
+The **dirty write** anomaly occurs when one transaction **overwrites UNcommitted changes** made by another transaction.<br>
 
 The *A critique of ANSI SQL isolation levels* paper says that **any isolation level** must protect from **dirty write**. Basically, *dirty write* **doesn't occur at all isolation levels** in many databases.<br>
 
