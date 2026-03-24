@@ -17,8 +17,8 @@
 <br>
 
 # Integrity vs. Consistency
-**Integrity** ensures that the data remains **correct** and **valid** over its **entire lifecycle**, i.e. **from** *creation* **to** *deletion*.<br>
-**Consistency** in distributed systems ensures that **all replicas** have the **same copy** of data, meaning **any read operation** returns the **most recent write**, **regardless** of which node performed it, **consistency** ensures that data are **synchronized across all replicas**. In **consistent systems**, every user or application sees the same, up-to-date information, **regardless** of which node/replica they query.<br>
+**Integrity** ensures that the data remains **correct** (**valid**) over its **entire lifecycle**, i.e. **from** *creation* **to** *deletion*.<br>
+**Consistency** means that data are **synchronized across all replicas** of a distributed systems. **Consistency** ensures that **all replicas** of a distributed systems have the **same copy** of data, meaning **any read operation** returns the **most recent write**, **regardless** of which node the operation was performed on. In **consistent systems**, every user or application sees the same, up-to-date information, **regardless** of which node/replica they query.<br>
 
 So, data can be:
 - **consistent but corrupted**, i.e. **all** replicas have **corrupted data**;
@@ -26,28 +26,14 @@ So, data can be:
 
 <br>
 
-The _key feature_ of relational databases is their ability to _ensure_ **data consistency** and **data integrity**:
-- *integrity* is maintained through **specific business rules** and **constraints**
-  - at the database level it is possible to create **integrity constraints**, e.g. `UNIQUE`, `NOT NULL`, **referential integrity constraints** and so on;
-- *consistency* is maintained through **synchronization** *between replicas* and **ACID** *per one replica or individual db node's data*;
-
-<br>
-
-If all required constraints can be formulated at the database level, consistency would be guaranteed. But some conditions are too complex for that.<br>
-If app breaks consistency without breaking the integrity, there is no way for db to detect such violations.<br>
-Thus, data _consistency_ is **stricter** than _integrity_.<br>
-
-<br>
-
-**Transaction** is a **set of operation** that has the following **properties** (aka **ACID**):
-- **C**onsistency: it transforms database from one **consistent** state to another **consistent** state;
+The relational databases _ensure_ **data consistency** and **data integrity** through **transactions**. **Transaction** is a **group of operations** over **multiple objects**. **Transactions** have the following **properties** (aka **ACID**):
+- **C**onsistency: in the context of **ACID** *consistency* means *data integrity*;
+  - it transforms database from one **correct** state to another **correct** state;
+  - it is maintained through **integrity constraints** (e.g. `UNIQUE`, `NOT NULL`, **referential integrity constraints**), **cascades** and **triggers**;
+  - **note**, in the context of the **CAP theorem** *consistency* has another sense and means that data are **synchronized across all replicas**;
 - **A**tomicity: **all operations** are executed as a **single unit** of work or rolled backed;
-- **I**solation: it **doesn't affect other transactions**;
-- **D**urability: after crash, the system may still contain some changes made by uncommitted transactions and **the system must be able to restore data consistency after craches**;
-
-<br>
-
-So, **isolation levels** are **crucial** for maintaining *data consistency* and *integrity*.<br>
+- **I**solation: it **doesn't affect other** *transactions*;
+- **D**urability: after crash, the system may still contain some changes made by **uncommitted** *transactions* and **the system must be able to restore data consistency after craches**;
 
 <br>
 
