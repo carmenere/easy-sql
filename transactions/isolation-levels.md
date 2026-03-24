@@ -128,8 +128,8 @@ So, in conjuction with the **ANSI SQL-92** standard we have **at least 7** anoma
   - **fixed** by `READ COMMITTED`;
   - but **in PostgreSQL** it is also **fixed** by `READ UNCOMMITTED`;
 - **P2**: **non-repeatable read**;
-  - the *non-repeatable read* anomaly occurs when the `T1` **reads** _the same row_ **twice**, 
-  whereas the `T2` **updates** (or **deletes**) this row between these reads and **commits** the change;
+  - the *non-repeatable read* anomaly occurs when one transaction **sees committed changes** made by another transaction;
+  - *for example*, `T1` **reads** _the same row_ **twice**, whereas the `T2` **updates** (or **deletes**) this row between these reads and **commits** the change;
     - as a result, the `T1` **gets different results**;
   - **fixed** by `REPEATABLE READ`;
 - **P3**: **phantom** (**note**, due to *ANSI SQL-92 standard* it is called just *phantom*, **not** *phantom read*);
