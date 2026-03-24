@@ -179,7 +179,7 @@ Common **approaches** to achieve linearizability:
 <br>
 
 ### Sequential consistency
-**Linearizability** provides following **guarantee**:
+**Sequential consistency** provides following **guarantee**:
 - **logical order guarantee**:
   - **all** operations **occur** in a **logical order**;
 
@@ -208,7 +208,7 @@ Indeed, in the above example, `r(x)` of `P2` can return `0` or `9`, depending on
 <br>
 
 ### Causal consistency
-**Linearizability** provides following **guarantee**:
+**Causal consistency** provides following **guarantee**:
 - **causal order guarantee**:
   - **only** operations with a **cause-and-effect relationship** must be seen in the correct order (in an order that respects causality) across all nodes in a distributed system;
 
@@ -228,15 +228,19 @@ In practice, *eventual consistency* means that **updates propagate asynchronousl
 <br>
 
 # The CAP theorem
-The **CAP theorem** states that a distributed data store cannot simultaneously provide more than two out of the following three guarantees:
-- **Consistency** (**C**): every request receives the **most recent write** or **an error**;
+The **CAP theorem** states that a *distributed system* **can only provide 2** *of 3 guarantees*:
+- **Consistency** (**C**): every **read** receives the **most recent write** or **an error**;
 - **Availability** (**A**): every request receives a (*non-error*) **response**, **without** the **guarantee** that it contains the *most recent write*;
-- **Partition tolerance** (**P**): the system **continues to operate** despite arbitrary *network failures* (*partitions*) that cause some messages to be dropped or delayed;
+- **Partition tolerance** (**P**): the system **continues to operate** despite arbitrary *network failures* (*partitions*) between nodes a *distributed system*;
+  - **P** means that messages are **dropped** or **delayed** by the network between nodes of a *distributed system*;
 
 <br>
 
-*In practice*, for any interesting distributed system, **P** **is given**. **Network failures will happen**. This means you **must choose between** **C** and **A** **during a network partition**:
-- **linearizable systems** (aka **CP**) **prioritize consistency**. If a **network partition** occurs, the system **might become unavailable to some clients** to ensure all remaining available nodes have a consistent view of the data;
-  - examples: *etcd*, *ZooKeeper*, *distributed databases using Paxos/Raft*;
-- **eventually consistent systems** (aka **AP**): **prioritize availability**. During a **network partition**, the **system remains available**, but **different parts** of the system might have **inconsistent** views of the data. **Consistency** is **eventually achieved** once the partition heals;
-  - examples: *Cassandra*, *DynamoDB*;
+*In practice*, for any a *distributed system*, **P** **is given**: **network failures happens**. This means you **must choose between** **C** and **A** **during a network partition**:
+- **linearizable systems** (aka **CP systems**) **prioritize consistency**
+  - if a **network partition** occurs, the system **might become unavailable to some clients** to ensure all remaining available nodes have a consistent view of the data;
+  - **examples**: *etcd*, *ZooKeeper*, a distributed databases using *Paxos/Raft*;
+- **eventually consistent systems** (aka **AP systems**): **prioritize availability**
+  - during a **network partition**, the **system remains available**, but **different parts** of the system might have **inconsistent** views of the data;
+  - **consistency** is **eventually achieved**;
+  - **examples**: *Cassandra*, *DynamoDB*;
