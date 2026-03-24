@@ -237,14 +237,14 @@ The **CAP theorem** states that a *distributed system* **can only provide 2** *o
 <br>
 
 *In practice*, for any a *distributed system*, **P** **is given**: **network failures happens**. This means you **must choose between** **C** and **A** during a **network partition**:
-- **CA systems** provide **C** and **A** **prioritize both consistency** and **availability**:
+- **CA systems** provide both **C** and **A**:
   - **CA** means that in the case of **P**, the **system becomes inoperable**;
   - **examples**: *MySQL*, *Postgres*;
 - **linearizable systems** (aka **CP systems**) **prioritize consistency**:
   - **CP** means that in the case of **P**, the system refuse **A** in favor of **C**;
   - during a *network partition* **some of nodes** *might become* **unavailable** to some clients to *ensure* **all remaining available nodes** have a **consistent** view of the data;
   - **examples**: *etcd*, *ZooKeeper*, a distributed databases using *Paxos/Raft*;
-- **eventually consistent systems** (aka **AP systems**): **prioritize availability**
+- **eventually consistent systems** (aka **AP systems**) **prioritize availability**:
   - **AP** means that in the case of **P**, the system refuse **C** in favor of **A**;
   - during a *network partition* **all nodes remain available**, but **some of nodes** *might have* **inconsistent** views of the data and *might return* **not actual data**;
   - **consistency** is **eventually achieved** when the network partition is resolved;
