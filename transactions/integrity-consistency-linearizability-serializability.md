@@ -231,7 +231,7 @@ In practice, *eventual consistency* means that **updates propagate asynchronousl
 The **CAP theorem** states that a *distributed system* **can only provide 2** *of 3 guarantees*:
 - **Consistency** (**C**): every **read** receives the **most recent write** or **an error**;
 - **Availability** (**A**): every request receives a (*non-error*) **response**, **without** the **guarantee** that it contains the *most recent write*;
-- **Partition tolerance** (**P**): the system **continues to operate** despite arbitrary *network failures* (*partitions*) between nodes a *distributed system*;
+- **Partition tolerance** (**P**): the system **continues to operate** despite arbitrary *network failures* (*partitions*) between nodes of a *distributed system*;
   - **P** means that messages are **dropped** or **delayed** by the network between nodes of a *distributed system*;
 
 <br>
