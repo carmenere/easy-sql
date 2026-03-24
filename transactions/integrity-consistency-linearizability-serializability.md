@@ -237,9 +237,9 @@ The **CAP theorem** states that a *distributed system* **can only provide 2** *o
 <br>
 
 *In practice*, for any a *distributed system*, **P** **is given**: **network failures happens**. This means you **must choose between** **C** and **A** during a **network partition**:
-- **CA systems** provide **C** and **A**
+- **CA systems** provide **C** and **A** **prioritize both consistency** and **availability**:
   - **CA** means that in the case of **P**, the **system becomes inoperable**;
-  - **examples** of **CA**: *MySQL*, *Postgres*;
+  - **examples**: *MySQL*, *Postgres*;
 - **linearizable systems** (aka **CP systems**) **prioritize consistency**:
   - **CP** means that in the case of **P**, the system refuse **A** in favor of **C**;
   - during a *network partition* **some of nodes** *might become* **unavailable** to some clients to *ensure* **all remaining available nodes** have a **consistent** view of the data;
