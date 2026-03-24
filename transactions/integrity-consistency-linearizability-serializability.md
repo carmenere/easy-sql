@@ -18,7 +18,7 @@
 
 # Integrity vs. Consistency
 **Integrity** ensures that the data remains **correct** (**valid**) over its **entire lifecycle**, i.e. **from** *creation* **to** *deletion*.<br>
-**Consistency** means that data are **synchronized across all replicas** of a distributed systems. **Consistency** ensures that **all replicas** of a distributed systems have the **same copy** of data, meaning **any read operation** returns the **most recent write**, **regardless** of which node the operation was performed on. In **consistent systems**, every user or application sees the same, up-to-date information, **regardless** of which node/replica they query.<br>
+**Consistency** means that data are **synchronized across all replicas** of a distributed systems. **Consistency** ensures that **all replicas** of a distributed systems have the **same copy** of data, meaning **any read operation** returns the **most recent write**, **regardless** of which node the operation was performed on. In **consistent systems**, every client sees the same, **up-to-date** information, **regardless** of which node/replica responded to the client.<br>
 
 So, data can be:
 - **consistent but corrupted**, i.e. **all** replicas have **corrupted data**;
