@@ -28,8 +28,8 @@ So, data can be:
 
 The relational databases _ensure_ **data consistency** and **data integrity** through **transactions**. **Transaction** is a **group of operations** over **multiple objects**. **Transactions** have the following **properties** (aka **ACID**):
 - **C**onsistency: in the context of **ACID** *consistency* means *data integrity*;
-  - it transforms database from one **correct** state to another **correct** state;
-  - it is maintained through **integrity constraints** (e.g. `UNIQUE`, `NOT NULL`, **referential integrity constraints**), **cascades** and **triggers**;
+  - *consistency* transforms database from one **correct** state to another **correct** state;
+  - *consistency* is maintained through **integrity constraints** (e.g. `UNIQUE`, `NOT NULL`, **referential integrity constraints**), **cascades** and **triggers**;
   - **note**, in the context of the **CAP theorem** *consistency* has another sense and means that data are **synchronized across all replicas**;
 - **A**tomicity: **all operations** are executed as a **single unit** of work or rolled backed;
 - **I**solation: it **doesn't affect other** *transactions*;
