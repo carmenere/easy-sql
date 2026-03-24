@@ -403,7 +403,7 @@ example=# select * from doctors ;
 ### Read skew
 **Read skew** anomaly occurs when 1) exists **complex multi-record condition** (**business rule**, **constraint**) *in one table* or *accross tables* and 2) such **multi-record condition** is **violated** *at application level*, but *at database level* this constraint is **not violated**. In other words, application has **inconsistent view of multiple records**.<br>
 
-Consider that there are several rows that are **logically linked by a constraint**: `row_a` and `row_b`. **Read skew** happens when **T1** **reads** one row (e.g. `row_a`), then **T2** **updates** only `row_a` or both `row_a`+`row_b` and then **T1** reads `row_b`, but **T2** **doesn't reread** `row_a`, i.e. it holds **previous** version of `row_a`.<br>
+Consider that there are several rows that are **logically linked by a constraint**: `row_a` and `row_b`. **Read skew** happens when **T1** **reads** one row (e.g. `row_a`), then **T2** **updates** both `row_a` and `row_b`, then **T1** reads `row_b`, but **T2** **doesn't reread** `row_a`, i.e. it holds **previous** version of `row_a`.<br>
 
 <br>
 
