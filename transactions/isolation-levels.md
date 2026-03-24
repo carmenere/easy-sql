@@ -68,7 +68,7 @@ PostgreSQL use two variations of MVCC called **SI** (**Snapshot Isolation**) and
 <br>
 
 # The transaction isolation levels
-**Concurrent execution** of multiple _correct_ **transactions** can lead to **several types of problems** (aka **concurrent phenomena**, **concurrent anomalies**, **read phenomena** or just **phenomena**) that **violate** the _data consistency_. In other words, **concurrent anomalies** are issues that can occur at **concurrent reading** and **writing** to the **same** data item in db.<br>
+**Concurrent execution** of multiple _correct_ **transactions** can lead to **several types of problems** (aka **concurrent phenomena**, **concurrent anomalies**) that **violate** the _data integrity_ or *data consistensy* in the sense of A**C**ID. In other words, **concurrent anomalies** are issues that can occur at **concurrent reading** and **writing** to the **same** data item in db.<br>
 
 <br>
 
@@ -97,12 +97,12 @@ The **ANSI SQL-92** standard:
 <br>
 
 The **isolation level** specifies which *phenomena* (**P1**, **P2**, and **P3**) are **possible** and **not possible** for a given *isolation level*:
-|Isolation level|Dirty read|Non-repeatable read|Phantom read|
-|:--------------|:---------|:------------------|:-----------|
-|`READ UNCOMMITTED`|Possible, but **not in PG**|Possible|Possible|
-|`READ COMMITTED`|**Not Possible**|Possible|Possible|
-|`REPEATABLE READ`|**Not Possible**|**Not Possible**|Possible, but **not in PG**|
-|`SERIALIZABLE`|**Not Possible**|**Not Possible**|**Not Possible**|
+|Isolation level|Dirty read|Non-repeatable read|Phantom read|Serialization anomalies|
+|:--------------|:---------|:------------------|:-----------|:----------------------|
+|`READ UNCOMMITTED`|Possible, but **not in PG**|Possible|Possible|Possible|
+|`READ COMMITTED`|**Not Possible**|Possible|Possible|Possible|
+|`REPEATABLE READ`|**Not Possible**|**Not Possible**|Possible, but **not in PG**|Possible|
+|`SERIALIZABLE`|**Not Possible**|**Not Possible**|**Not Possible**|**Not Possible**|
 
 <br>
 
