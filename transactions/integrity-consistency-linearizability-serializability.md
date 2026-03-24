@@ -231,16 +231,22 @@ In practice, *eventual consistency* means that **updates propagate asynchronousl
 The **CAP theorem** states that a *distributed system* **can only provide 2** *of 3 guarantees*:
 - **Consistency** (**C**): every **read** receives the **most recent write** or **an error**;
 - **Availability** (**A**): every request receives a (*non-error*) **response**, **without** the **guarantee** that it contains the *most recent write*;
-- **Partition tolerance** (**P**): the system **continues to operate** despite arbitrary *network failures* (*partitions*) between nodes of a *distributed system*;
-  - **P** means that messages are **dropped** or **delayed** by the network between nodes of a *distributed system*;
+- **Partition tolerance** (**P**): is the **ability** of a *distributed system* to **continue operating** despite arbitrary *network failures* (*network partitions*) between nodes;
+  - **P** means that messages are **dropped** or **delayed** by the network between nodes;
 
 <br>
 
-*In practice*, for any a *distributed system*, **P** **is given**: **network failures happens**. This means you **must choose between** **C** and **A** **during a network partition**:
-- **linearizable systems** (aka **CP systems**) **prioritize consistency**
-  - if a **network partition** occurs, the system **might become unavailable to some clients** to ensure all remaining available nodes have a consistent view of the data;
+*In practice*, for any a *distributed system*, **P** **is given**: **network failures happens**. This means you **must choose between** **C** and **A** during a **network partition**:
+- **linearizable systems** (aka **CP systems**) **prioritize consistency**:
+  - **CP** means that in the case of **P**, the system refuse **A** in favor of **C**;
+  - during a *network partition* **some of nodes** *might become* **unavailable** to some clients to *ensure* **all remaining available nodes** have a **consistent** view of the data;
   - **examples**: *etcd*, *ZooKeeper*, a distributed databases using *Paxos/Raft*;
 - **eventually consistent systems** (aka **AP systems**): **prioritize availability**
-  - during a **network partition**, the **system remains available**, but **different parts** of the system might have **inconsistent** views of the data;
-  - **consistency** is **eventually achieved**;
-  - **examples**: *Cassandra*, *DynamoDB*;
+  - **AP** means that in the case of **P**, the system refuse **C** in favor of **A**;
+  - during a *network partition* **all nodes remain available**, but **some of nodes** *might have* **inconsistent** views of the data and *might return* **not actual data**;
+  - **consistency** is **eventually achieved** when the network partition is resolved;
+  - **examples**: *Cassandra*, *DynamoDB*, *CouchDB*, *Riak*, *Elastic Search*;
+
+<br>
+
+The **CA systems** provide **C** and **A**. **CA** means that in the case of **P**, the **system becomes inoperable**. Examples of **CA**: *MySQL*, *Postgres*.<br>
