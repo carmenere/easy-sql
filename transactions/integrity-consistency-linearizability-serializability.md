@@ -38,7 +38,6 @@ The relational databases _ensure_ **data consistency** and **data integrity** th
 <br>
 
 # Coherence vs. Consistency
-**Coherence** is like consistency but it handles **single locations** whereas consistency handles multiple locations.<br>
 **Coherence** ensures **all** nodes/processors across the system (distributed or not) see the **most resent version** (i.e. the **most recent write**) of **some data item** (e.g., **variable** `X`).<br>
 Coherence typically refers to **cache coherence** and it is often **managed by hardware**. It uses protocols like **MESI** to manage cache line states.<br>
 
