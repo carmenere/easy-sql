@@ -170,11 +170,22 @@ The **cost** of *linearizability* is a **high latency** due to quorum-based oper
 Common **approaches** to achieve linearizability:
 - **single-leader replication**;
   - **all write operations** go to a single, designated **leader node**;
-- **quorum-based consistency** (e.g., *Paxos*, *Raft*);
+- **quorum-based linearizability** (e.g., *Paxos*, *Raft*);
   - operations require **agreement from a majority** (**quorum**) of nodes before being considered complete;
     - for a **write**, a **quorum** of nodes must acknowledge the write;
     - for a **read**, a **quorum** of nodes must be queried to ensure the latest data is retrieved;
 - **atomic broadcast** (e.g., *Zookeeper’s ZAB*, *Apache Kafka’s Raft*);
+
+<br>
+
+To **ensure** that *read quorum* and *write quorum* **overlap** the inequality **N < R + W** must be satisfied, where
+- **N** is a number of **all** nodes in a *distributed system*;
+- **R** is a number of nodes in a *read quorum*;
+- **W** is a number of nodes in a *write quorum*;
+
+<br>
+
+**Quorum-based linearizability** ensures *linearizability* (*strong consistency*) by requiring that *read quorum* and *write quorum* **must overlap**, because this **intersection** of writes and readers **sees all history** of all operations and this requirement **ensures** that readers see the most resnet write.<br>
 
 <br>
 
@@ -228,7 +239,7 @@ In practice, *eventual consistency* means that **updates propagate asynchronousl
 <br>
 
 # The CAP theorem
-The **CAP theorem** states that a *distributed system* **cannot provide all CAP properties** (**C**/**A**/**P**), but **only any 2 of them**:
+The **CAP theorem** states that a *distributed system* **cannot provide all 3 CAP properties** (**C**/**A**/**P**), but **only any 2 of them**:
 - **Consistency** (**C**): every **read** receives the **most recent write** or **an error**;
 - **Availability** (**A**): every request receives a (*non-error*) **response**, **without** the **guarantee** that it contains the *most recent write*;
 - **Partition tolerance** (**P**): is the **ability** of a *distributed system* to **continue operating** despite arbitrary *network failures* (*network partitions*) between nodes;
